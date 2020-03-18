@@ -26,9 +26,10 @@ case class TripleBox(px: Double, py: Double, value: String, label: String) exten
 case class ArrayOfBoxes(px: Double, py: Double, values: Seq[String], label: String) extends ConnectToElement with ConnectFromElement
 case class Connector(e1: Int, sub1: Int, e2: Int) extends DrawAnswerElement
 case class Curve(pnts: Seq[(Double, Double)]) extends DrawAnswerElement
+case class Text(px: Double, py: Double, msg: String) extends DrawAnswerElement
 
 object Modes extends Enumeration {
-  val Select, RefBox, ValBox, DoubleNode, TripleNode, Array, Connector, Curve = this.Value
+  val Select, RefBox, ValBox, DoubleNode, TripleNode, Array, Connector, Curve, Text = this.Value
 }
 
 @react class DrawAnswerComponent extends Component {
@@ -95,6 +96,8 @@ object Modes extends Enumeration {
         path (d := "M 570 25 C 630 25, 570 45, 630 45", stroke := "black", fillOpacity := "0.0"),
         onMouseDown := (e => { e.stopPropagation; setState(state.copy(mode = Modes.Curve, selected = -1, subselected = -1)) })
       ),
+      text (x := 680, y := 30, textAnchor := "middle", "Text", stroke := "black", fill := "black",
+        onMouseDown := (e => { e.stopPropagation; setState(state.copy(mode = Modes.Text, selected = -1, subselected = -1)) })),
       onMouseDown := (e => e.stopPropagation())
     )
   }
@@ -186,8 +189,19 @@ object Modes extends Enumeration {
       )
     case (Curve(pnts), index) =>
       svg (
-        key := (index + keyOffset).toString
-
+        key := (index + keyOffset).toString,
+        polyline (points := pnts.map { case (x, y) => s"$x,$y" }.mkString(" "), fillOpacity := "0.0"),
+        stroke := (if (index >= 0 && index == state.selected) "red" else "black"),
+        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1, 0)))
+      )
+    case (Text(px, py, msg), index) =>
+      text (
+        key := (index + keyOffset).toString,
+        x := px, y := py,
+        msg,
+        stroke := (if (index >= 0 && index == state.selected) "cyan" else "black"),
+        fill := (if (index >= 0 && index == state.selected) "cyan" else "black"),
+        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1, 0)))
       )
   }
 
@@ -225,6 +239,8 @@ object Modes extends Enumeration {
             helper(values.length, if (state.subselected < 0) label else values(state.subselected), 
               str => setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(if (state.subselected < 0) elem.copy(label = str) else elem.copy(values = values.patch(state.subselected, Seq(str), 1))), 1))))
           }
+        case elem@Text(px, py, label) => 
+          helper(0, label, str => setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(elem.copy(msg = str)), 1))))
         case _ =>
       }
     }
@@ -238,7 +254,7 @@ object Modes extends Enumeration {
       case Modes.Select =>
         setState(state.copy(selected = -1, subselected = -1))
       case Modes.RefBox =>
-        setState(state.copy(svgElements = addElement(ReferenceBox(x, y, "ref")), selected = 0, subselected = 0))
+        setState(state.copy(svgElements = addElement(ReferenceBox(x, y, "")), selected = 0, subselected = 0))
       case Modes.ValBox =>
         setState(state.copy(svgElements = addElement(ValueBox(x, y, "", "")), selected = 0, subselected = 0))
       case Modes.DoubleNode =>
@@ -250,7 +266,9 @@ object Modes extends Enumeration {
       case Modes.Connector =>
         // Do nothing. Can't start a connector in open space.
       case Modes.Curve =>
-        // TODO:
+        setState(state.copy(svgElements = addElement(Curve(Seq(x -> y))), selected = 0, subselected = 0, downLoc = Some(x -> y)))
+      case Modes.Text =>
+        setState(state.copy(svgElements = addElement(Text(x, y, "_")), selected = 0, subselected = 0))
     }
   }
 
@@ -277,6 +295,10 @@ object Modes extends Enumeration {
           case Connector(e1, sub1, e2) =>
             val closest = findEndConnection(x, y, e1)
             closest.foreach { newE2 => setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(Connector(e1, sub1, newE2)), 1)))}
+          case Curve(pnts) =>
+            setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(Curve(pnts.map(p => (p._1+dx, p._2+dy)))), 1), downLoc = Some(x -> y), curLoc = Some(x -> y)))
+          case elem@Text(px, py, msg) => 
+            setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(elem.copy(px = elem.px + dx, py = elem.py + dy)), 1), downLoc = Some(x -> y), curLoc = Some(x -> y)))
           case _ =>
         }
       } else if (state.mode == Modes.Connector && state.selected >=0 && state.selected < state.svgElements.length) {
@@ -286,15 +308,18 @@ object Modes extends Enumeration {
             closest.foreach { newE2 => setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(Connector(e1, sub1, newE2)), 1)))}
           case _ =>
         }
-      } else if (state.mode == Modes.Curve) {
-        // TODO:
+      } else if (state.mode == Modes.Curve && state.selected >=0 && state.selected < state.svgElements.length) {
+        state.svgElements(state.selected) match {
+          case Curve(pnts) =>
+            setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(Curve((x, y) +: pnts)), 1)))
+          case _ =>
+        }
       }
 
     }
   }
 
   def mouseUpHandler(e: SyntheticMouseEvent[Element]): Unit = {
-    // TODO:
     setState(state.copy(downLoc = None, curLoc = None))
   }
 
@@ -363,6 +388,6 @@ object Modes extends Enumeration {
         case _ => 1e100
       }
     }
-    Some(closest._2)
+    if (elemByIndex(closest._2).isInstanceOf[ConnectToElement]) Some(closest._2) else None
   }
 }
