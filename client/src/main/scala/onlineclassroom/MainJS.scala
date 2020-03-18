@@ -1,19 +1,20 @@
-package edu.trinity.videoquizreact
+package onlineclassroom
 
-import edu.trinity.videoquizreact.shared.SharedMessages
 import org.scalajs.dom
 
 import slinky.core._
 import slinky.web.ReactDOM
 import slinky.web.html._
 
-object ScalaJSExample {
+object MainJS {
 
   def main(args: Array[String]): Unit = {
-    // dom.document.getElementById("scalajsShoutOut").textContent = SharedMessages.itWorks
     println("Call the react stuff.")
     ReactDOM.render(
-      h1("Hello, world!"),
+      div(
+        h1("Header"),
+        ShortAnswerQuestion(ShortAnswerSpec("What am I thinking now?"), None)
+      ),
       dom.document.getElementById("root")
     )
 

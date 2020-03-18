@@ -1,6 +1,4 @@
-# play-scalajs-slink
+# Online Classroom
 
-This is my starter project for things that involve Play using Scala.js and
-the Slinky React binding. I'm using this as the starter for student code in
-Web Apps Spring 2020.
-
+This project is intended to be an online classroom that students can use for quizzes and tests. I expect functionality
+to grow from there.
