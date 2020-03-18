@@ -261,9 +261,7 @@ object Modes extends Enumeration {
   }
 
   def mouseMoveHandler(e: SyntheticMouseEvent[Element]): Unit = {
-    println(s"m1 ${state.downLoc}")
     state.downLoc.foreach { case (ox, oy) =>
-      println("Move handler")
       val x = e.nativeEvent.asInstanceOf[scalajs.js.Dynamic].offsetX.asInstanceOf[Double]
       val y = e.nativeEvent.asInstanceOf[scalajs.js.Dynamic].offsetY.asInstanceOf[Double]
       if (state.mode == Modes.Select && state.selected >= 0 && state.selected < state.svgElements.length) {
@@ -327,8 +325,11 @@ object Modes extends Enumeration {
               case elem@TripleBox(px, py, value, label) => Some(if(x < px) 0 else 1)
               case elem@ArrayOfBoxes(px, py, values, label) => Some(((x - (px - boxSize * 0.5 * values.length)) / boxSize).toInt)
           }
-          for (sub1 <- ostart; e2 <- findEndConnection(x, y, indexForElem(elem))) {
-            setState(state.copy(svgElements = addElement(Connector(indexForElem(cf), sub1, e2)), selected = state.svgElements.length, subselected = 0, downLoc = Some(x -> y)))  
+          val e1 = indexForElem(cf)
+          if (state.svgElements.collect { case c: Connector => c }.forall(_.e1 != e1)) {
+            for (sub1 <- ostart; e2 <- findEndConnection(x, y, indexForElem(elem))) {
+              setState(state.copy(svgElements = addElement(Connector(e1, sub1, e2)), selected = state.svgElements.length, subselected = 0, downLoc = Some(x -> y)))  
+            }
           }
         case _ =>
       }

@@ -24,7 +24,9 @@ CREATE TABLE user_course_assoc (
 CREATE TABLE assessment (
   id SERIAL PRIMARY KEY,
   name varchar(30) NOT NULL,
-  description varchar(2000) NOT NULL
+  description varchar(2000) NOT NULL,
+  points int NOT NULL,
+  auto_grade boolean NOT NULL
 );
 
 /*
@@ -45,7 +47,7 @@ CREATE TABLE assessment_course_assoc (
 
 CREATE TABLE problem (
   id SERIAL PRIMARY KEY,
-  problem_type int NOT NULL,
+  weight double NOT NULL,
   auto_grade boolean NOT NULL,
   spec json NOT NULL
 );

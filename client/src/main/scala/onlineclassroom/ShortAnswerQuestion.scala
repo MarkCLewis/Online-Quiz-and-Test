@@ -6,18 +6,18 @@ import slinky.core.annotations.react
 import slinky.web.html._
 
 @react class ShortAnswerQuestion extends Component {
-  case class Props(spec: ShortAnswerSpec, lastAnswer: Option[String])
+  case class Props(info: ShortAnswerInfo, lastAnswer: Option[String])
   case class State(answer: String)
 
   def initialState: State = State(props.lastAnswer.getOrElse(""))
 
   def render(): ReactElement = {
     div (
-      props.spec.prompt,
+      props.info.prompt,
       br(),
       textarea(value := state.answer, onChange := (e => setState(state.copy(answer = e.target.value))), cols := "100", rows := "8"),
       br(),
-      DrawAnswerComponent(Seq(ReferenceBox(20, 100, "head")), 800, 400)
+      DrawAnswerComponent(props.info.initialElements, 800, 400)
     )
   }
 }
