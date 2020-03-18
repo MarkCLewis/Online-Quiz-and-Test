@@ -17,7 +17,7 @@ case class ShortAnswerSpec(prompt: String)
     div (
       props.spec.prompt,
       br(),
-      textarea(value := state.answer, onChange := (e => setState(state.copy(answer = e.target.value)))),
+      textarea(value := state.answer, onChange := (e => setState(state.copy(answer = e.target.value))), cols := "100", rows := "8"),
       br(),
       DrawAnswerComponent(Seq(ReferenceBox(20, 100, "head")), 800, 400)
     )
