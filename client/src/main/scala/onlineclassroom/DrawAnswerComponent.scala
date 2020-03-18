@@ -16,18 +16,6 @@ import org.scalajs.dom.raw.Event
 import org.scalajs.dom.raw.KeyboardEvent
 import slinky.web.html.selected
 
-sealed trait DrawAnswerElement
-sealed trait ConnectFromElement extends DrawAnswerElement
-sealed trait ConnectToElement extends DrawAnswerElement
-case class ReferenceBox(px: Double, py: Double, label: String) extends ConnectFromElement
-case class ValueBox(px: Double, py: Double, value: String, label: String) extends ConnectToElement
-case class DoubleBox(px: Double, py: Double, value: String, label: String) extends ConnectToElement with ConnectFromElement
-case class TripleBox(px: Double, py: Double, value: String, label: String) extends ConnectToElement with ConnectFromElement
-case class ArrayOfBoxes(px: Double, py: Double, values: Seq[String], label: String) extends ConnectToElement with ConnectFromElement
-case class Connector(e1: Int, sub1: Int, e2: Int) extends DrawAnswerElement
-case class Curve(pnts: Seq[(Double, Double)]) extends DrawAnswerElement
-case class Text(px: Double, py: Double, msg: String) extends DrawAnswerElement
-
 object Modes extends Enumeration {
   val Select, RefBox, ValBox, DoubleNode, TripleNode, Array, Connector, Curve, Text = this.Value
 }
@@ -231,9 +219,9 @@ object Modes extends Enumeration {
         case elem@TripleBox(px, py, value, label) => 
           helper(1, if (state.subselected == 0) value else label, str => setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(if (state.subselected == 0) elem.copy(value = str) else elem.copy(label = str)), 1))))
         case elem@ArrayOfBoxes(px, py, values, label) => 
-          if (e.key == "Insert") {
+          if (e.key == "Insert" || (e.ctrlKey && e.key == "i")) {
             setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(elem.copy(values = values :+ "")), 1)))
-          } else if (e.key == "Delete" && values.length > 1) {
+          } else if ((e.key == "Delete"  || (e.ctrlKey && e.key == "z")) && values.length > 1) {
             setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(elem.copy(values = values.dropRight(1))), 1)))
           } else {
             helper(values.length, if (state.subselected < 0) label else values(state.subselected), 

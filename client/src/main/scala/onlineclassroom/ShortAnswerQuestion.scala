@@ -5,8 +5,6 @@ import slinky.core.facade.ReactElement
 import slinky.core.annotations.react
 import slinky.web.html._
 
-case class ShortAnswerSpec(prompt: String)
-
 @react class ShortAnswerQuestion extends Component {
   case class Props(spec: ShortAnswerSpec, lastAnswer: Option[String])
   case class State(answer: String)

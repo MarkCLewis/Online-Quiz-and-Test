@@ -23,7 +23,7 @@ You can't select or edit the elements that are initially present.
 You can drag elements around.
 Arrow keys move you between editable text with up and down going between the label and the values.
 You can remove the selected element with Ctrl-X.
-When you have an array selected you can add and remove elements at the end with Insert and Delete.
+When you have an array selected you can add and remove elements at the end with Insert/Ctrl-I and Delete/Ctrl-Z.
 Connections only go from things that could hold references to things that could be referenced.
 Dragging on a connection (either in select or when first placed) will change where it connects to."""))
       ),
