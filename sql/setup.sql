@@ -1,4 +1,6 @@
 
+CREATE DATABASE onlineclassroom; -- OWNER = mlewis as an option on personal machine.
+
 /*
  * The goal is to have Google login be the primary form of login be a Google login. I'm allowing a password field as the
  * backup. I'm going to store passwords properly for this application so they are slated and hashed.
@@ -13,12 +15,13 @@ CREATE TABLE course (
   id SERIAL PRIMARY KEY,
   name varchar(20) NOT NULL,
   semester varchar(4) NOT NULL,
-  section int NOT NULL,
+  section int NOT NULL
 );
 
 CREATE TABLE user_course_assoc (
   userid int REFERENCES users(id) ON DELETE CASCADE,
-  courseid int REFERENCES course(id) ON DELETE CASCADE
+  courseid int REFERENCES course(id) ON DELETE CASCADE,
+  time_multiplier double precision NOT NULL
 );
 
 CREATE TABLE assessment (
@@ -40,6 +43,7 @@ CREATE TABLE assessment_course_assoc (
   id SERIAL PRIMARY KEY,
   courseid int REFERENCES course(id) ON DELETE CASCADE,
   assessmentid int REFERENCES assessment(id) ON DELETE CASCADE,
+  auto_grade int NOT NULL,
   start_time timestamp,
   end_time timestamp,
   time_limit int /* minutes that they have to work on this once they start. */
@@ -47,8 +51,6 @@ CREATE TABLE assessment_course_assoc (
 
 CREATE TABLE problem (
   id SERIAL PRIMARY KEY,
-  weight double NOT NULL,
-  auto_grade boolean NOT NULL,
   spec json NOT NULL
 );
 
@@ -59,7 +61,8 @@ CREATE TABLE problem_assessment_assoc (
   id SERIAL PRIMARY KEY,
   assessmentid int REFERENCES assessment(id) ON DELETE CASCADE,
   problemid int REFERENCES problem(id) ON DELETE CASCADE,
-)
+  weight double precision NOT NULL
+);
 
 CREATE TABLE answer (
   id SERIAL PRIMARY KEY,

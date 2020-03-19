@@ -1,6 +1,13 @@
 package onlineclassroom
 
+sealed trait ClientToServerMessage
+case class LoginData(username: String, password: String) extends ClientToServerMessage
+case class NewCourseData(name:String,semester:String,section:Int,studentData:String)
+
 case class CourseInfo(id: Int, name: String, semester: String, section: Int)
+
+// TODO: Borrowed - check if they can be refactored
+case class UserData(username: String, id: Int, sessionUID: Int)
 
 object AutoGradeOptions extends Enumeration {
   val Never, OnProblemSubmit, OnTestSubmit = Value

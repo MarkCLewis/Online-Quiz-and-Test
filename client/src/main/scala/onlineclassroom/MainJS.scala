@@ -5,14 +5,15 @@ import org.scalajs.dom
 import slinky.core._
 import slinky.web.ReactDOM
 import slinky.web.html._
+import org.scalajs.dom.raw.WebSocket
 
 object MainJS {
-
   def main(args: Array[String]): Unit = {
     println("Call the react stuff.")
     ReactDOM.render(
       div(
-        h1("Header"),
+        TopComponent(),
+        h1("Samples"),
         ShortAnswerQuestion(ShortAnswerInfo("""This is an example quetion for the app I'm writing so you can do quizzes and tests online.
           There is a text area where you will type most things. The interesting part is the area below it where I have written code
           that allows you to "draw" things. It has functionality specifically to draw data structures and other elements that are useful
