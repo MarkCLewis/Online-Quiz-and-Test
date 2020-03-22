@@ -4,6 +4,7 @@ import slinky.core.Component
 import slinky.core.annotations.react
 import slinky.core.facade.ReactElement
 import slinky.web.html._
+import org.scalajs.dom.experimental._
 
 @react class TopComponent extends Component {
   type Props = Unit
@@ -13,11 +14,10 @@ import slinky.web.html._
 
   def render(): ReactElement = div ({
     val ret = state.userData.map(ud => 
-      // if (ud.instructor) InstructorPage(ud, doLogout) else UserPage(ud, doLogout)
       (div (
         button ("Logout", onClick := doLogout _),
         br (),
-        UserPage(ud)
+        if (ud.instructor) InstructorPage(ud) else UserPage(ud)
       )): ReactElement
     ).getOrElse(LoginPage(doLogin(_)): ReactElement)
     ret
@@ -28,6 +28,7 @@ import slinky.web.html._
   }
 
   def doLogout(): Unit = {
+    Fetch.fetch("/logout")
     setState(State(None))
   }
 }

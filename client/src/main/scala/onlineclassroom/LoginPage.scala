@@ -28,7 +28,7 @@ import onlineclassroom.ReadsAndWrites._
   def render(): ReactElement = div (
     h1 ("Login"),
     div (
-      "Username: ", input(`type` := "text", id := "name", value := state.username.getOrElse(""), onChange := (e => setState(state.copy(username = Some(e.target.value)))))
+      "Email: ", input(`type` := "text", id := "name", value := state.username.getOrElse(""), onChange := (e => setState(state.copy(username = Some(e.target.value)))))
     ),
     div (
       "Password", input(`type` := "password", id := "password", value := state.password.getOrElse(""), onChange := (e => setState(state.copy(password = Some(e.target.value)))))
@@ -44,29 +44,16 @@ import onlineclassroom.ReadsAndWrites._
   implicit val ec = ExecutionContext.global
   
   def tryLogin(): Unit = {
-    if (state.username.isEmpty) setState(state.copy(message = "Username is required."))
+    if (state.username.isEmpty) setState(state.copy(message = "Email is required."))
     else if (state.password.isEmpty) setState(state.copy(message = "Password is required."))
     else {
-      val headers = new Headers()
-      headers.set("Content-Type", "application/json")
-      headers.set("Csrf-Token", dom.document.getElementsByTagName("body").apply(0).getAttribute("data-token"))
-      Fetch.fetch(
-        s"/tryLogin",
-        RequestInit(method = HttpMethod.POST, mode = RequestMode.cors, headers = headers, body = Json.toJson(LoginData(state.username.get, state.password.get)).toString())
-      ).flatMap(_.text()).map { res =>
-        println(state.username, state.password)
-        Json.fromJson[UserData](Json.parse(res)) match {
-          case JsSuccess(ud, path) =>
-            println(ud)
-            if (ud.id < 0) {
-              setState(_.copy(message = "Invalid username or password."))
+      PostFetch.fetch("/tryLogin", LoginData(state.username.get, state.password.get),
+        (ud: UserData) => if (ud.id < 0) {
+              setState(_.copy(message = "Invalid email or password."))
             } else {
               props.doLogin(ud)
-            }
-          case e @ JsError(_) =>
-            setState(_.copy(message = "Error with JSON response from server."))
-        }
-      }
+            },
+        e => setState(_.copy(message = "Error with JSON response from server.")))
     }
   }
 }

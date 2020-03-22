@@ -8,7 +8,8 @@ CREATE DATABASE onlineclassroom; -- OWNER = mlewis as an option on personal mach
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   email varchar(20) NOT NULL,
-  password varchar(200)
+  password varchar(200) NOT NULL,
+  instructor boolean NOT NULL
 );
 
 CREATE TABLE course (
@@ -18,18 +19,25 @@ CREATE TABLE course (
   section int NOT NULL
 );
 
+CREATE TABLE grade_formula (
+  id SERIAL PRIMARY KEY,
+  courseid int NOT NULL REFERENCES course(id) ON DELETE CASCADE,
+  grade_group varchar(20) NOT NULL,
+  formula varchar(1000) NOT NULL
+);
+
 CREATE TABLE user_course_assoc (
-  userid int REFERENCES users(id) ON DELETE CASCADE,
-  courseid int REFERENCES course(id) ON DELETE CASCADE,
-  time_multiplier double precision NOT NULL
+  userid int NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  courseid int NOT NULL REFERENCES course(id) ON DELETE CASCADE,
+  time_multiplier double precision NOT NULL,
+  PRIMARY KEY (userid, courseid)
 );
 
 CREATE TABLE assessment (
   id SERIAL PRIMARY KEY,
   name varchar(30) NOT NULL,
   description varchar(2000) NOT NULL,
-  points int NOT NULL,
-  auto_grade boolean NOT NULL
+  auto_grade int NOT NULL
 );
 
 /*
@@ -41,8 +49,10 @@ CREATE TABLE assessment (
  */
 CREATE TABLE assessment_course_assoc (
   id SERIAL PRIMARY KEY,
-  courseid int REFERENCES course(id) ON DELETE CASCADE,
-  assessmentid int REFERENCES assessment(id) ON DELETE CASCADE,
+  courseid int NOT NULL REFERENCES course(id) ON DELETE CASCADE,
+  assessmentid int NOT NULL REFERENCES assessment(id) ON DELETE CASCADE,
+  points int NOT NULL,
+  grade_group varchar(20) NOT NULL,
   auto_grade int NOT NULL,
   start_time timestamp,
   end_time timestamp,
@@ -51,7 +61,7 @@ CREATE TABLE assessment_course_assoc (
 
 CREATE TABLE problem (
   id SERIAL PRIMARY KEY,
-  spec json NOT NULL
+  spec varchar(20000) NOT NULL
 );
 
 /*
@@ -59,18 +69,18 @@ CREATE TABLE problem (
  */
 CREATE TABLE problem_assessment_assoc (
   id SERIAL PRIMARY KEY,
-  assessmentid int REFERENCES assessment(id) ON DELETE CASCADE,
-  problemid int REFERENCES problem(id) ON DELETE CASCADE,
-  weight double precision NOT NULL
+  assessmentid int NOT NULL REFERENCES assessment(id) ON DELETE CASCADE,
+  problemid int NOT NULL REFERENCES problem(id) ON DELETE CASCADE,
+  weight double precision NOT NULL,
+  extra_credit boolean NOT NULL
 );
 
 CREATE TABLE answer (
   id SERIAL PRIMARY KEY,
-  userid int REFERENCES users(id) ON DELETE CASCADE,
-  courseid int REFERENCES course(id) ON DELETE CASCADE,
-  assessmentid int REFERENCES assessment(id) ON DELETE CASCADE,
-  probid int REFERENCES problem(id) ON DELETE CASCADE,
-  correct boolean NOT NULL,
+  userid int NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  courseid int NOT NULL REFERENCES course(id) ON DELETE CASCADE,
+  paaid int NOT NULL REFERENCES problem_assessment_assoc(id) ON DELETE CASCADE,
+  percent_correct double precision,
   submit_time timestamp NOT NULL,
-  details json NOT NULL
+  details varchar(20000) NOT NULL
 );

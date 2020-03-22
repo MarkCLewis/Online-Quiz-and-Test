@@ -24,7 +24,10 @@ import scala.concurrent.Future
 @Singleton
 class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvider, cc: ControllerComponents)(implicit ec: ExecutionContext) 
     extends AbstractController(cc) with HasDatabaseConfigProvider[JdbcProfile] {
-  
+
+  import ControlHelpers._
+  implicit val actionBuilder = Action
+
   val model = new OCDatabaseModel(db)
   model.initializeIfNeeded()
 
@@ -44,30 +47,111 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
     request.body.asJson.map { body =>
       Json.fromJson[A](body) match {
         case JsSuccess(a, path) => f(a)
-        case e @ JsError(_) => Future(Redirect(routes.Application.index()))
+        case e @ JsError(_) => 
+          println(s"Error parsing received Json.\n  $body\n  $e")
+          Future(Ok(Json.toJson("Error parsing message.")))
       }
     }.getOrElse(Future(Redirect(routes.Application.index())))
   }
 
   def tryLogin = Action.async { implicit request =>
     withJsonBody[LoginData] { li =>
-      model.validateUser(li.username, li.password).flatMap { uid => 
-        uid match {
+      model.validateUser(li.username, li.password).flatMap { case ret => 
+        ret match {
           case None =>
-            Future(Ok(Json.toJson(UserData(li.username, -1, scala.util.Random.nextInt()))))
-          case Some(n) =>
-            Future(Ok(Json.toJson(UserData(li.username, n, scala.util.Random.nextInt()))))
-            // val instructorCourses = model.instructorCourseIds(n, db)
-            // instructorCourses.map(_ match {
-            //   case Seq() =>
-            //     val ud = UserData(li.username, uid, scala.util.Random.nextInt(), false)
-            //     Ok(Json.toJson(ud)).withSession(request.session + ("username" -> li.username) + ("userid" -> n.toString))
-            //   case _ =>
-            //     val ud = UserData(li.username, uid, scala.util.Random.nextInt(), true)
-            //     Ok(Json.toJson(ud)).withSession(request.session + ("username" -> li.username) + ("userid" -> n.toString) + ("instructor" -> "yes"))
-            // })
+            Future(Ok(Json.toJson(UserData(li.username, -1, scala.util.Random.nextInt(), false))))
+          case Some((n, instructor)) =>
+            Future(Ok(Json.toJson(UserData(li.username, n, scala.util.Random.nextInt(), instructor)))
+              .withSession(request.session + ("username" -> li.username) + ("userid" -> n.toString) + ("instructor" -> instructor.toString)))
         }
       }
+    }
+  }
+
+  def logout = Action { implicit request =>
+    Ok("").withSession(request.session - "username" - "userid" - "instructor")
+  }
+
+  def changePassword = AuthenticatedAction { implicit request =>
+    withJsonBody[PasswordChangeData] { pcd =>
+      model.changePassword(pcd.userid, pcd.oldPassword, pcd.newPassword).map(b => Ok(Json.toJson(b)))
+    }
+  }
+
+  def createUser = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[NewUserData] { nud =>
+      model.createUser(nud.username, nud.password, nud.instructor).map(i => Ok(Json.toJson(i > 0)))
+    }
+  }
+
+  def createCourse = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[NewCourseData] { ncd =>
+      model.addCourse(ncd, request.session("userid").toInt).map(b => Ok(Json.toJson(b)))
+    }
+  }
+
+  def getCourses = AuthenticatedAction { implicit request =>
+    withJsonBody[Int] { userid =>
+      model.coursesForUser(userid).map(courses => Ok(Json.toJson(courses)))
+    }
+  }
+
+  def getInstructorCourseData = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[Int] { courseid =>
+      val assessmentData = model.courseAssessmentData(courseid)
+      val studentData = model.courseStudentGradeData(courseid, request.session("userid").toInt)
+      (for {
+        ad <- assessmentData
+        sd <- studentData
+      } yield FullInstructorCourseData(sd, ad)).map { t =>println(t); Ok(Json.toJson(t)) }
+    }
+  }
+
+  def saveProblem = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[ProblemSpec] { problemSpec =>
+      model.saveOrCreateProblem(problemSpec).map(id => Ok(Json.toJson(id)))
+    }
+  }
+
+  def getProblems = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[Int] { userid =>
+      model.allProblems().map(probs => Ok(Json.toJson(probs)))
+    }
+  }
+
+  def saveAssessment = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[AssessmentData] { ad =>
+      model.saveOrCreateAssessment(ad).map(id => Ok(Json.toJson(id)))
+    }
+  }
+
+  def getAssessments = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[Int] { userid =>
+      model.allAssessments().map(ads => Ok(Json.toJson(ads)))
+    }
+  }
+
+  def loadAssociatedProblems = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[Int] { assessmntid =>
+      model.associatedProblems(assessmntid).map(paas => Ok(Json.toJson(paas)))
+    }
+  }
+
+  def saveProblemAssessmentAssoc = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[ProblemAssessmentAssociation] { paa =>
+      model.saveProblemAssessmentAssoc(paa).map(id => Ok(Json.toJson(id)))
+    }
+  }
+
+  def removeProblemAssessmentAssoc = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[Int] { paaid =>
+      model.removeProblemAssessmentAssoc(paaid).map(cnt => Ok(Json.toJson(cnt)))
+    }
+  }
+
+  def saveAssessmentCourseAssoc = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[AssessmentCourseInfo] { aci =>
+      model.saveAssessmentCourseAssoc(aci).map(id => Ok(Json.toJson(id)))
     }
   }
 }

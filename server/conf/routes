@@ -4,9 +4,23 @@
 
 # Home page
 GET        /                             controllers.Application.index
+GET        /logout                       controllers.Application.logout
 
 # API Calls
 POST       /tryLogin                     controllers.Application.tryLogin
+POST       /changePassword               controllers.Application.changePassword
+POST       /createUser                   controllers.Application.createUser
+POST       /createCourse                 controllers.Application.createCourse
+POST       /getCourses                   controllers.Application.getCourses
+POST       /getInstructorCourseData      controllers.Application.getInstructorCourseData
+POST       /saveProblem                  controllers.Application.saveProblem
+POST       /getProblems                  controllers.Application.getProblems
+POST       /saveAssessment               controllers.Application.saveAssessment
+POST       /getAssessments               controllers.Application.getAssessments
+POST       /loadAssociatedProblems       controllers.Application.loadAssociatedProblems
+POST       /saveProblemAssessmentAssoc   controllers.Application.saveProblemAssessmentAssoc
+POST       /removeProblemAssessmentAssoc controllers.Application.removeProblemAssessmentAssoc
+POST       /saveAssessmentCourseAssoc    controllers.Application.saveAssessmentCourseAssoc
 
 # Prefix must match `play.assets.urlPrefix`
 GET        /assets/*file                 controllers.Assets.at(file)

@@ -25,10 +25,10 @@ object Modes extends Enumeration {
   val boxSize = 20
   val curveOffset = 50
 
-  case class Props(initialElements: Seq[DrawAnswerElement], width: Double, height: Double)
+  case class Props(initialElements: Seq[DrawAnswerElement], editableElements: Seq[DrawAnswerElement], width: Double, height: Double, setElements: Seq[DrawAnswerElement] => Unit)
   case class State(svgElements: Seq[DrawAnswerElement], selected: Int, subselected: Int, mode: Modes.Value, downLoc: Option[(Double, Double)], curLoc: Option[(Double, Double)])
   
-  def initialState = State(Nil, -1, -1, Modes.Select, None, None)
+  def initialState = State(props.editableElements, -1, -1, Modes.Select, None, None)
 
   override def componentDidMount(): Unit = {
     org.scalajs.dom.window.addEventListener("keydown", keyDownHandler)
@@ -58,7 +58,7 @@ object Modes extends Enumeration {
       onMouseDown := (e => mouseDownHandler(e)),
       onMouseMove := (e => mouseMoveHandler(e)),
       onMouseUp := (e => mouseUpHandler(e)),
-      onMouseLeave := (e => setState(state.copy(selected = -1)))
+      onMouseLeave := { e => setState(state.copy(selected = -1)); props.setElements(state.svgElements) }
     )    
   }
 
@@ -318,14 +318,15 @@ object Modes extends Enumeration {
       setState(state.copy(selected = state.svgElements.indexOf(elem), subselected = sub, downLoc = Some(x -> y)))
     } else if (state.mode == Modes.Connector) {
       elem match {
-        case cf: ConnectFromElement =>
-          val ostart = cf match {
+        case _: ReferenceBox | _: DoubleBox | _: TripleBox | _: ArrayOfBoxes =>
+          val ostart = elem match {
               case elem@ReferenceBox(px, py, label) => Some(0)
               case elem@DoubleBox(px, py, value, label) => Some(0)
               case elem@TripleBox(px, py, value, label) => Some(if(x < px) 0 else 1)
               case elem@ArrayOfBoxes(px, py, values, label) => Some(((x - (px - boxSize * 0.5 * values.length)) / boxSize).toInt)
+              case _ => None
           }
-          val e1 = indexForElem(cf)
+          val e1 = indexForElem(elem)
           if (state.svgElements.collect { case c: Connector => c }.forall(_.e1 != e1)) {
             for (sub1 <- ostart; e2 <- findEndConnection(x, y, indexForElem(elem))) {
               setState(state.copy(svgElements = addElement(Connector(e1, sub1, e2)), selected = state.svgElements.length, subselected = 0, downLoc = Some(x -> y)))  
@@ -377,6 +378,10 @@ object Modes extends Enumeration {
         case _ => 1e100
       }
     }
-    if (elemByIndex(closest._2).isInstanceOf[ConnectToElement]) Some(closest._2) else None
+    val e2 = elemByIndex(closest._2)
+    e2 match {
+      case _: ValueBox | _: DoubleBox | _: TripleBox | _: ArrayOfBoxes => Some(closest._2)
+      case _ => None
+    }
   }
 }

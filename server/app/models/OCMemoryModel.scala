@@ -10,13 +10,13 @@ import onlineclassroom._
   */
 class OCMemoryModel {
   private val users = Map[String, (Int, String)]()
-  private val courses = Map[Int, CourseInfo]()
+  private val courses = Map[Int, CourseData]()
 
   def validateUser(username: String, password: String): Future[Option[Int]] = ???
 
   def createUser(username: String, password: String): Future[Option[Int]] = ???
 
-  def coursesForUser(userid: Int): Future[Seq[CourseInfo]] = ???
+  def coursesForUser(userid: Int): Future[Seq[CourseData]] = ???
 
   def createCourse(name: String, semester: String, section: Int): Future[Option[Int]] = ???
 
