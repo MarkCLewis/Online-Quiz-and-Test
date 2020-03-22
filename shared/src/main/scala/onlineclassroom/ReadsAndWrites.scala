@@ -123,6 +123,9 @@ object ReadsAndWrites {
   implicit val manualEntryInfoWrites = Json.writes[ManualEntryInfo]
   implicit val manualEntryInfoReads = Json.reads[ManualEntryInfo]
 
+  implicit val problemInfoErrorWrites = Json.writes[ProblemInfoError]
+  implicit val problemInfoErrorReads = Json.reads[ProblemInfoError]
+  
   implicit val problemInfoWrites = Json.writes[ProblemInfo]
   implicit val problemInfoReads = Json.reads[ProblemInfo]
 
@@ -162,6 +165,39 @@ object ReadsAndWrites {
   implicit val studentAssessmentStartWrites = Json.writes[StudentAssessmentStart]
   implicit val studentAssessmentStartReads = Json.reads[StudentAssessmentStart]
 
+  implicit val multipleChoiceAnswerWrites = Json.writes[MultipleChoiceAnswer]
+  implicit val multipleChoiceAnswerReads = Json.reads[MultipleChoiceAnswer]
+
+  implicit val shortAnswerAnswerWrites = Json.writes[ShortAnswerAnswer]
+  implicit val shortAnswerAnswerReads = Json.reads[ShortAnswerAnswer]
+
+  implicit val writeFunctionAnswerWrites = Json.writes[WriteFunctionAnswer]
+  implicit val writeFunctionAnswerReads = Json.reads[WriteFunctionAnswer]
+
+  implicit val writeLambdaAnswerWrites = Json.writes[WriteLambdaAnswer]
+  implicit val writeLambdaAnswerReads = Json.reads[WriteLambdaAnswer]
+
+  implicit val writeExpressionAnswerWrites = Json.writes[WriteExpressionAnswer]
+  implicit val writeExpressionAnswerReads = Json.reads[WriteExpressionAnswer]
+
+  implicit val drawingAnswerWrites = Json.writes[DrawingAnswer]
+  implicit val drawingAnswerReads = Json.reads[DrawingAnswer]
+
+  implicit val manualEntryAnswerWrites = Json.writes[ManualEntryAnswer]
+  implicit val manualEntryAnswerReads = Json.reads[ManualEntryAnswer]
+
+  implicit val problemAnswerErrorWrites = Json.writes[ProblemAnswerError]
+  implicit val problemAnswerErrorReads = Json.reads[ProblemAnswerError]
+  
+  implicit val problemAnswerWrites = Json.writes[ProblemAnswer]
+  implicit val problemAnswerReads = Json.reads[ProblemAnswer]
+
+  implicit val studentProblemSpecWrites = Json.writes[StudentProblemSpec]
+  implicit val studentProblemSpecReads = Json.reads[StudentProblemSpec]
+
+  implicit val saveAnswerInfoWrites = Json.writes[SaveAnswerInfo]
+  implicit val saveAnswerInfoReads = Json.reads[SaveAnswerInfo]
+  
   // implicit val gradeAnswerWrites = Json.writes[GradeAnswer]
   // implicit val gradeAnswerReads = Json.reads[GradeAnswer]
 }

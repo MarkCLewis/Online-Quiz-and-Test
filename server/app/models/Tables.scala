@@ -144,31 +144,31 @@ trait Tables {
   /** Entity class storing rows of table AssessmentStartTime
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param userid Database column userid SqlType(int4)
-   *  @param aciid Database column aciid SqlType(int4)
-   *  @param timeStarted Database column time_started SqlType(timestamp without time zone), Default(None) */
-  case class AssessmentStartTimeRow(id: Int, userid: Int, aciid: Int, timeStarted: Option[java.sql.Timestamp] = None)
+   *  @param acaid Database column acaid SqlType(int4)
+   *  @param timeStarted Database column time_started SqlType(timestamp without time zone) */
+  case class AssessmentStartTimeRow(id: Int, userid: Int, acaid: Int, timeStarted: java.sql.Timestamp)
   /** GetResult implicit for fetching AssessmentStartTimeRow objects using plain SQL queries */
-  implicit def GetResultAssessmentStartTimeRow(implicit e0: GR[Int], e1: GR[Option[java.sql.Timestamp]]): GR[AssessmentStartTimeRow] = GR{
+  implicit def GetResultAssessmentStartTimeRow(implicit e0: GR[Int], e1: GR[java.sql.Timestamp]): GR[AssessmentStartTimeRow] = GR{
     prs => import prs._
-    AssessmentStartTimeRow.tupled((<<[Int], <<[Int], <<[Int], <<?[java.sql.Timestamp]))
+    AssessmentStartTimeRow.tupled((<<[Int], <<[Int], <<[Int], <<[java.sql.Timestamp]))
   }
   /** Table description of table assessment_start_time. Objects of this class serve as prototypes for rows in queries. */
   class AssessmentStartTime(_tableTag: Tag) extends profile.api.Table[AssessmentStartTimeRow](_tableTag, "assessment_start_time") {
-    def * = (id, userid, aciid, timeStarted) <> (AssessmentStartTimeRow.tupled, AssessmentStartTimeRow.unapply)
+    def * = (id, userid, acaid, timeStarted) <> (AssessmentStartTimeRow.tupled, AssessmentStartTimeRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = ((Rep.Some(id), Rep.Some(userid), Rep.Some(aciid), timeStarted)).shaped.<>({r=>import r._; _1.map(_=> AssessmentStartTimeRow.tupled((_1.get, _2.get, _3.get, _4)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = ((Rep.Some(id), Rep.Some(userid), Rep.Some(acaid), Rep.Some(timeStarted))).shaped.<>({r=>import r._; _1.map(_=> AssessmentStartTimeRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
     /** Database column userid SqlType(int4) */
     val userid: Rep[Int] = column[Int]("userid")
-    /** Database column aciid SqlType(int4) */
-    val aciid: Rep[Int] = column[Int]("aciid")
-    /** Database column time_started SqlType(timestamp without time zone), Default(None) */
-    val timeStarted: Rep[Option[java.sql.Timestamp]] = column[Option[java.sql.Timestamp]]("time_started", O.Default(None))
+    /** Database column acaid SqlType(int4) */
+    val acaid: Rep[Int] = column[Int]("acaid")
+    /** Database column time_started SqlType(timestamp without time zone) */
+    val timeStarted: Rep[java.sql.Timestamp] = column[java.sql.Timestamp]("time_started")
 
-    /** Foreign key referencing AssessmentCourseAssoc (database name assessment_start_time_aciid_fkey) */
-    lazy val assessmentCourseAssocFk = foreignKey("assessment_start_time_aciid_fkey", aciid, AssessmentCourseAssoc)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.Cascade)
+    /** Foreign key referencing AssessmentCourseAssoc (database name assessment_start_time_acaid_fkey) */
+    lazy val assessmentCourseAssocFk = foreignKey("assessment_start_time_acaid_fkey", acaid, AssessmentCourseAssoc)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.Cascade)
     /** Foreign key referencing Users (database name assessment_start_time_userid_fkey) */
     lazy val usersFk = foreignKey("assessment_start_time_userid_fkey", userid, Users)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.Cascade)
   }

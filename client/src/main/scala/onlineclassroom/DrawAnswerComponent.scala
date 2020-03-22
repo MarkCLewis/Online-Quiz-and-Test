@@ -25,7 +25,8 @@ object Modes extends Enumeration {
   val boxSize = 20
   val curveOffset = 50
 
-  case class Props(initialElements: Seq[DrawAnswerElement], editableElements: Seq[DrawAnswerElement], width: Double, height: Double, setElements: Seq[DrawAnswerElement] => Unit)
+  case class Props(initialElements: Seq[DrawAnswerElement], editableElements: Seq[DrawAnswerElement], width: Double, height: Double, editable: Boolean,
+    setElements: Seq[DrawAnswerElement] => Unit)
   case class State(svgElements: Seq[DrawAnswerElement], selected: Int, subselected: Int, mode: Modes.Value, downLoc: Option[(Double, Double)], curLoc: Option[(Double, Double)])
   
   def initialState = State(props.editableElements, -1, -1, Modes.Select, None, None)
@@ -53,7 +54,7 @@ object Modes extends Enumeration {
         rect (width := props.width.toString, height := props.height.toString),
         props.initialElements.zipWithIndex.map(t => elementToSVG((t._1, t._2 - 1000000), 0)) ++ 
         state.svgElements.zipWithIndex.map(t => elementToSVG(t, props.initialElements.length)) :+
-        controlElements()
+        (if (props.editable) controlElements() else svg( key := "toolbar" ): ReactElement)
       ),
       onMouseDown := (e => mouseDownHandler(e)),
       onMouseMove := (e => mouseMoveHandler(e)),

@@ -19,6 +19,8 @@ object CourseViewMode extends Enumeration {
 
 @react class ViewCourse extends Component {
   case class Props(userData: UserData, course: CourseData, exitFunc: () => Unit)
+  
+  // TODO: Need FullStudentData for this course both for multiplier and for grades.
   case class State(message: String, mode: CourseViewMode.Value, assessments: Seq[AssessmentCourseInfo], starts: Seq[StudentAssessmentStart],
     selectedAssessment: Option[AssessmentCourseInfo], serverTime: Date)
 
@@ -47,11 +49,13 @@ object CourseViewMode extends Enumeration {
       case CourseViewMode.Normal =>
         div (
           // TODO: Row tables with grades.
+          "All times in the server's timezone.",
+          br(),
           "Server Time:",
           state.serverTime.toLocaleString(),
           br(),
           h3 ("Assessments:"),
-          "CLick an assessment name to start that assessment.",
+          "Click an assessment name to start that assessment.",
           br(),
           table (
             thead ( tr ( th ("Name"), th ("Start Time"), th ("End Time"), th ("Length [Minutes]"), th ("Status"))),
@@ -61,7 +65,7 @@ object CourseViewMode extends Enumeration {
                 val end = a.end.getOrElse("None")
                 val limit = a.timeLimit.map(_.toString).getOrElse("None")
                 tr ( key := i.toString, 
-                  td (a.name, onClick := (e => setState(state.copy(mode = CourseViewMode.TakeAssessment, selectedAssessment = Some(a))))), 
+                  td (a.name, onClick := (e => if (TimeMethods.assessmentViewable(a, state.serverTime)) setState(state.copy(mode = CourseViewMode.TakeAssessment, selectedAssessment = Some(a))))), 
                   td (start),
                   td (end),
                   td (limit),
@@ -81,7 +85,7 @@ object CourseViewMode extends Enumeration {
 
   def loadTime(): Unit = {
     PostFetch.fetch("/getServerTime", props.userData.id,
-      (time: String) => { println(s"Got time: $time"); setState(state.copy(serverTime = new Date(time)))},
+      (time: String) => setState(state.copy(serverTime = new Date(time))),
       e => setState(_.copy(message = "Error with JSON response getting server time.")))
   }
 

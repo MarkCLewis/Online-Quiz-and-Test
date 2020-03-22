@@ -88,6 +88,6 @@ CREATE TABLE answer (
 CREATE TABLE assessment_start_time (
   id SERIAL PRIMARY KEY,
   userid int NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  aciid int NOT NULL REFERENCES assessment_course_assoc(id) ON DELETE CASCADE,
-  time_started timestamp
+  acaid int NOT NULL REFERENCES assessment_course_assoc(id) ON DELETE CASCADE,
+  time_started timestamp NOT NULL
 );

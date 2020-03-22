@@ -24,11 +24,16 @@ import scala.scalajs.js.Thenable.Implicits._
 import onlineclassroom._
 import onlineclassroom.ReadsAndWrites._
 
+object InstructorCourseViewModes extends Enumeration {
+  val Normal, Grading = Value
+}
+
 @react class ViewCourse extends Component {
   case class Props(userData: UserData, course: CourseData, allAssessments: Seq[AssessmentData], exitFunc: () => Unit)
-  case class State(message: String, studentData: Seq[FullStudentData], gradeData: Option[CourseGradeInformation])
+  case class State(message: String, mode: InstructorCourseViewModes.Value, studentData: Seq[FullStudentData], gradeData: Option[CourseGradeInformation], 
+    selectedAssessment: Option[AssessmentCourseInfo])
 
-  def initialState: State = State("", Nil, None)
+  def initialState: State = State("", InstructorCourseViewModes.Normal, Nil, None, None)
 
   override def componentDidMount(): Unit = {
     loadData()
@@ -62,7 +67,7 @@ import onlineclassroom.ReadsAndWrites._
               state.studentData.zipWithIndex.map { case (sd, i) =>
                 tr (key := i.toString, 
                   td (sd.email), 
-                  td (input (`type` := "number", value := sd.timeMultiplier.toString)), 
+                  td (input (`type` := "number", value := sd.timeMultiplier.toString, onChange := (e => ???))), 
                   groups.zipWithIndex.map { case (g, j) => groupColumns(g).zipWithIndex.map { case (colHead, k) => td (key := (j*100+k).toString, 
                     if (sd.grades.contains(colHead)) sd.grades(colHead) else calcFormula(sd.grades, formulaMap(g)))}})
               }

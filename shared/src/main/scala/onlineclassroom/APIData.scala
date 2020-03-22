@@ -32,14 +32,14 @@ case class AssessmentData(id: Int, name: String, description: String, autoGrade:
  * They are also passed from the server to the client to give information on the previous answers.
  */
 sealed trait ProblemAnswer
-sealed trait CodeAnswer extends ProblemAnswer
 case class MultipleChoiceAnswer(answer: Int) extends ProblemAnswer
 case class ShortAnswerAnswer(text: String, elements: Seq[DrawAnswerElement]) extends ProblemAnswer
-case class WriteFunctionAnswer(code: String) extends CodeAnswer
-case class WriteLambdaAnswer(code: String) extends CodeAnswer
-case class WriteExpressionAnswer(code: String) extends CodeAnswer
+case class WriteFunctionAnswer(code: String) extends ProblemAnswer
+case class WriteLambdaAnswer(code: String) extends ProblemAnswer
+case class WriteExpressionAnswer(code: String) extends ProblemAnswer
 case class DrawingAnswer(elements: Seq[DrawAnswerElement]) extends ProblemAnswer
-case object ManualEntryAnswer extends ProblemAnswer
+case class ManualEntryAnswer(requiredForJson: Int = -1) extends ProblemAnswer
+case class ProblemAnswerError(error: String) extends ProblemAnswer
 
 case class GradeAnswer(id: Int, userid: Int, courseid: Int, paaid: Int, percentCorrect: Option[Double], submitTime: String, answer: ProblemAnswer)
 
@@ -57,6 +57,7 @@ case class WriteLambdaInfo(name: String, prompt: String, returnType: String, var
 case class WriteExpressionInfo(name: String, prompt: String, varSpecs: Seq[VariableSpec], generalSetup: String) extends ProblemInfo
 case class DrawingInfo(name: String, prompt: String, initialElements: Seq[DrawAnswerElement]) extends ProblemInfo
 case class ManualEntryInfo(name: String) extends ProblemInfo { def prompt = "Manual Entry" }
+case class ProblemInfoError(name: String, prompt: String) extends ProblemInfo
 
 /**
  * These are the types that hold just the answer related part of a spec.
@@ -116,5 +117,9 @@ case class ProblemSpec(id: Int, info: ProblemInfo, answerInfo: ProblemGradeInfo)
       "Mismatch"
   }
 }
+
+case class StudentProblemSpec(paaid: Int, assessmentid: Int, problemid: Int, weight: Double, extraCredit: Boolean, info: ProblemInfo, answer: Option[ProblemAnswer])
+
+case class SaveAnswerInfo(id: Int, userid: Int, courseid: Int, paaid: Int, answer: ProblemAnswer)
 
 case class ProblemAssessmentAssociation(id: Int, assessmentid: Int, problemid: Int, weight: Double, extraCredit: Boolean)

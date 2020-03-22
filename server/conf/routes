@@ -23,6 +23,11 @@ POST       /removeProblemAssessmentAssoc controllers.Application.removeProblemAs
 POST       /saveAssessmentCourseAssoc    controllers.Application.saveAssessmentCourseAssoc
 POST       /getServerTime                controllers.Application.getServerTime
 POST       /getCourseAssessments         controllers.Application.getCourseAssessments
+POST       /getStudentStarts             controllers.Application.getStudentStarts
+POST       /getAssessmentProblems        controllers.Application.getAssessmentProblems
+POST       /startAssessment              controllers.Application.startAssessment
+POST       /mergeAnswer                  controllers.Application.mergeAnswer
+POST       /addAnswer                    controllers.Application.addAnswer
 
 # Prefix must match `play.assets.urlPrefix`
 GET        /assets/*file                 controllers.Assets.at(file)

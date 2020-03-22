@@ -227,4 +227,74 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
     }).result).map(as => as.map { case (aca, assessment) => AssessmentCourseInfo(aca.id, aca.courseid, assessment.id, assessment.name, assessment.description, 
       aca.points, aca.gradeGroup, aca.autoGrade, aca.startTime.map(_.toString()), aca.endTime.map(_.toString()), aca.timeLimit)})
   }
+
+  def getStudentStarts(userid: Int, courseid: Int): Future[Seq[StudentAssessmentStart]] = {
+    db.run {
+      (for {
+        aca <- AssessmentCourseAssoc
+        if aca.courseid === courseid
+        start <- AssessmentStartTime
+        if start.acaid === aca.id && start.userid === userid
+      } yield start).result
+    }.map(_.map(start => StudentAssessmentStart(start.id, start.userid, start.acaid, start.timeStarted.toString)))
+  }
+
+// case class StudentProblemSpec(paaid: Int, assessmentid: Int, problemid: Int, weight: Double, extraCredit: Boolean, info: ProblemInfo, answer: Option[ProblemAnswer])
+  def getAssessmentProblems(userid: Int, courseid: Int, assessmentid: Int, aciid: Int): Future[Seq[StudentProblemSpec]] = {
+    val fInfo = db.run {
+      (for {
+        paa <- ProblemAssessmentAssoc
+        if paa.assessmentid === assessmentid
+        problem <- Problem
+        if problem.id === paa.problemid
+      } yield (paa, problem)).result
+    }
+    fInfo.flatMap{info => 
+      Future.sequence(info.map { case (paa, problem) =>
+        val answers = db.run((for {
+          answer <- Answer
+          if answer.userid === userid && answer.courseid === courseid && answer.paaid === paa.id
+        } yield answer).result)
+        val fanswer = answers.map(_.lastOption)
+        fanswer.map { answerRow =>
+          val probAnswer = answerRow.map(ar => Json.fromJson[ProblemAnswer](Json.parse(ar.details)).asOpt.getOrElse(ProblemAnswerError(s"Error parsing: ${ar.details}")))
+          val info = Json.fromJson[ProblemSpec](Json.parse(problem.spec)).asOpt.map(_.info).getOrElse(ProblemInfoError("Error", s"Parsing: ${problem.spec}"))
+          StudentProblemSpec(paa.id, assessmentid, paa.problemid, paa.weight, paa.extraCredit, info, probAnswer)
+        }
+      })
+    }
+  }
+
+  def startAssessment(userid: Int, acaid: Int): Future[StudentAssessmentStart] = {
+    val fCurrentStarts = db.run ( AssessmentStartTime.filter(astRow => astRow.userid === userid && astRow.acaid === acaid).result )
+    fCurrentStarts.flatMap(currentStarts => if (currentStarts.isEmpty) {
+      val now = new Timestamp(System.currentTimeMillis())
+      db.run ( AssessmentStartTime += AssessmentStartTimeRow(-1, userid, acaid, now)).map(_ => StudentAssessmentStart(-1, userid, acaid, now.toString))
+    } else {
+      val cs = currentStarts.head
+      Future.successful(StudentAssessmentStart(cs.id, cs.userid, cs.acaid, cs.timeStarted.toString()))
+    })
+  }
+
+  def mergeAnswer(sai: SaveAnswerInfo, percent: Option[Double]): Future[Int] = {
+    println(s"Merging $sai")
+    if (sai.id >= 0) {
+      db.run(Answer.filter(_.id === sai.id)
+        .update(AnswerRow(sai.id, sai.userid, sai.courseid, sai.paaid, percent, new Timestamp(System.currentTimeMillis()), Json.toJson(sai.answer).toString())))
+        .map(cnt => sai.id)
+    } else {
+      val fcurrent = db.run(Answer.filter(row => row.userid === sai.userid && row.courseid === sai.courseid && row.paaid === sai.paaid).result)
+      fcurrent.flatMap(current => if (current.isEmpty) addAnswer(sai, percent) else {
+        val cid = current.head.id
+        db.run(Answer.filter(_.id === cid).update(AnswerRow(cid, sai.userid, sai.courseid, sai.paaid, percent, new Timestamp(System.currentTimeMillis()), Json.toJson(sai.answer).toString())))
+          .map(cnt => cid)
+      })
+    }
+  }
+
+  def addAnswer(sai: SaveAnswerInfo, percent: Option[Double]): Future[Int] = {
+    db.run(Answer += AnswerRow(sai.id, sai.userid, sai.courseid, sai.paaid, percent, new Timestamp(System.currentTimeMillis()), Json.toJson(sai.answer).toString())).
+      flatMap(cnt => db.run(Answer.map(_.id).max.getOrElse(-1).result))
+  }
+
 }
