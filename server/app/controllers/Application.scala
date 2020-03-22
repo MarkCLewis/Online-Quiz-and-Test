@@ -20,6 +20,7 @@ import scala.concurrent.ExecutionContext
 import onlineclassroom._
 import onlineclassroom.ReadsAndWrites._
 import scala.concurrent.Future
+import java.sql.Timestamp
 
 @Singleton
 class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvider, cc: ControllerComponents)(implicit ec: ExecutionContext) 
@@ -152,6 +153,18 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
   def saveAssessmentCourseAssoc = AuthenticatedInstructorAction { implicit request =>
     withJsonBody[AssessmentCourseInfo] { aci =>
       model.saveAssessmentCourseAssoc(aci).map(id => Ok(Json.toJson(id)))
+    }
+  }
+
+  def getServerTime = AuthenticatedAction { implicit request =>
+    withJsonBody[Int] { userid =>
+      Future.successful(Ok(Json.toJson(new Timestamp(System.currentTimeMillis()).toString())))
+    }
+  }
+
+  def getCourseAssessments = AuthenticatedAction { implicit request =>
+    withJsonBody[(Int, Int)] { case (userid, courseid) =>
+      model.getCourseAssessments(courseid).map(as => Ok(Json.toJson(as)))
     }
   }
 }

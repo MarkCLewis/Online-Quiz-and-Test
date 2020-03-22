@@ -159,6 +159,9 @@ object ReadsAndWrites {
   implicit val problemAssessmentAssocWrites = Json.writes[ProblemAssessmentAssociation]
   implicit val problemAssessmentAssocReads = Json.reads[ProblemAssessmentAssociation]
 
+  implicit val studentAssessmentStartWrites = Json.writes[StudentAssessmentStart]
+  implicit val studentAssessmentStartReads = Json.reads[StudentAssessmentStart]
+
   // implicit val gradeAnswerWrites = Json.writes[GradeAnswer]
   // implicit val gradeAnswerReads = Json.reads[GradeAnswer]
 }

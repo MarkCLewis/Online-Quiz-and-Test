@@ -23,6 +23,8 @@ case class GradeFormulaInfo(id: Int, groupName: String, formula: String)
 case class CourseGradeInformation(assessments: Seq[AssessmentCourseInfo], formulas: Seq[GradeFormulaInfo])
 case class FullInstructorCourseData(students: Seq[FullStudentData], grades: CourseGradeInformation)
 
+case class StudentAssessmentStart(id: Int, userid: Int, aciid: Int, timeStarted: String)
+
 case class AssessmentData(id: Int, name: String, description: String, autoGrade: Int)
 
 /**

@@ -46,6 +46,8 @@ object InstructorPageMode extends Enumeration {
     case InstructorPageMode.TopPage =>
       div (
         header (h1 ("Instructor page: " + props.userData.username) ),
+        button ("Change Password", onClick := (e => setState(state.copy(mode = InstructorPageMode.ChangePassword)))),
+        hr(),
         hr(),
         button ("Create Course", onClick := (e => setState(state.copy(mode = InstructorPageMode.CreatCourse)))),
         hr(),

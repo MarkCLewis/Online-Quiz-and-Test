@@ -17,7 +17,7 @@ import org.scalajs.dom.experimental._
       (div (
         button ("Logout", onClick := doLogout _),
         br (),
-        if (ud.instructor) InstructorPage(ud) else UserPage(ud)
+        if (ud.instructor) InstructorPage(ud) else StudentPage(ud)
       )): ReactElement
     ).getOrElse(LoginPage(doLogin(_)): ReactElement)
     ret

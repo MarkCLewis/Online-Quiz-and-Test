@@ -21,6 +21,8 @@ POST       /loadAssociatedProblems       controllers.Application.loadAssociatedP
 POST       /saveProblemAssessmentAssoc   controllers.Application.saveProblemAssessmentAssoc
 POST       /removeProblemAssessmentAssoc controllers.Application.removeProblemAssessmentAssoc
 POST       /saveAssessmentCourseAssoc    controllers.Application.saveAssessmentCourseAssoc
+POST       /getServerTime                controllers.Application.getServerTime
+POST       /getCourseAssessments         controllers.Application.getCourseAssessments
 
 # Prefix must match `play.assets.urlPrefix`
 GET        /assets/*file                 controllers.Assets.at(file)

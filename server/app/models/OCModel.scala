@@ -21,4 +21,5 @@ trait OCModel {
   def saveProblemAssessmentAssoc(paa: ProblemAssessmentAssociation): Future[Int]
   def removeProblemAssessmentAssoc(paaid: Int): Future[Int]
   def saveAssessmentCourseAssoc(aci: AssessmentCourseInfo): Future[Int]
+  def getCourseAssessments(courseid: Int): Future[Seq[AssessmentCourseInfo]]
 }

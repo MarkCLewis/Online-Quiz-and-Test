@@ -1,17 +1,16 @@
 package onlineclassroom.instructorcomponents
 
+// TODO:
 // Instructor Course Display:
 // *** Show list of students
 // *See grades for students (full table by assessment would be nice)
 // Add student
 // Adjust time multiplier on the list of students (put text fields in table)
-// List of assessments
-// Add an remove assessment
-// Adjust points, time, autograde, and group on assessment
+// *** List of assessments
+// *** Add an remove assessment
+// *** Adjust points, time, autograde, and group on assessment
 // Grade an assessment
 // Make it so we have groups of assessments each with their own total/average
-// List of groups
-// Add and remove groups
 
 import org.scalajs.dom
 import slinky.core.Component

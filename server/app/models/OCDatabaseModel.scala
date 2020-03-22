@@ -101,7 +101,6 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
   }
 
   def courseAssessmentData(courseid: Int): Future[CourseGradeInformation] = {
-    println(s"courseAssessmentData($courseid")
     val assessments = db.run((for {
       aca <- AssessmentCourseAssoc
       if aca.courseid === courseid
@@ -119,7 +118,6 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
   }
 
   def studentAssessmentPercent(userid: Int, courseid: Int, assessmentid: Int): Future[Double] = {
-    println(s"studentAssessmentPercent($userid, $courseid, $assessmentid)")
     val ungrouped = db.run((for {
       paa <- ProblemAssessmentAssoc
       if paa.assessmentid === assessmentid
@@ -137,7 +135,6 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
   }
 
   def studentGradeData(userid: Int, courseid: Int): Future[FullStudentData] = {
-    println(s"studentGradeData($userid, $courseid)")
     val student = db.run(Users.filter(_.id === userid).result)
     val uca = db.run(UserCourseAssoc.filter(ucaRow => ucaRow.userid === userid && ucaRow.courseid === courseid).result)
     val assnInfo = db.run((for {
@@ -217,5 +214,17 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
     } else {
       db.run(AssessmentCourseAssoc.filter(_.id === aci.id).update(AssessmentCourseAssocRow(aci.id, aci.courseid, aci.assessmentid, aci.points, aci.group, aci.autoGrade, aci.start.map(Timestamp.valueOf), aci.end.map(Timestamp.valueOf), aci.timeLimit))).map(_ => aci.id)
     }
+  }
+
+  def getCourseAssessments(courseid: Int): Future[Seq[AssessmentCourseInfo]] = {
+    db.run((for {
+      aca <- AssessmentCourseAssoc
+      if aca.courseid === courseid
+      assessment <- Assessment
+      if assessment.id === aca.assessmentid
+    } yield {
+      (aca, assessment)
+    }).result).map(as => as.map { case (aca, assessment) => AssessmentCourseInfo(aca.id, aca.courseid, assessment.id, assessment.name, assessment.description, 
+      aca.points, aca.gradeGroup, aca.autoGrade, aca.startTime.map(_.toString()), aca.endTime.map(_.toString()), aca.timeLimit)})
   }
 }

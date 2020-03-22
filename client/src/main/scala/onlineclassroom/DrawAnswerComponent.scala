@@ -205,7 +205,6 @@ object Modes extends Enumeration {
         setStr(newStr)
       }
     }
-    println(e.key, e.ctrlKey, state.selected, state.subselected, state.mode)
     if (state.selected >= 0 && state.selected < state.svgElements.length) {
       if (e.ctrlKey && e.key == "x") {
         setState(state.copy(svgElements = removeElement(state.selected), selected = -1))
@@ -235,7 +234,6 @@ object Modes extends Enumeration {
   }
 
   def mouseDownHandler(e: SyntheticMouseEvent[Element]): Unit = {
-    println("Main down handler")
     val x = e.nativeEvent.asInstanceOf[scalajs.js.Dynamic].offsetX.asInstanceOf[Double]
     val y = e.nativeEvent.asInstanceOf[scalajs.js.Dynamic].offsetY.asInstanceOf[Double]
     state.mode match {
@@ -310,7 +308,6 @@ object Modes extends Enumeration {
   }
 
   def elementMouseDownHandler(e: SyntheticMouseEvent[Element], elem: DrawAnswerElement, sub: Int): Unit = {
-    println("Element mouse down")
     val x = e.nativeEvent.asInstanceOf[scalajs.js.Dynamic].offsetX.asInstanceOf[Double]
     val y = e.nativeEvent.asInstanceOf[scalajs.js.Dynamic].offsetY.asInstanceOf[Double]
     e.stopPropagation()

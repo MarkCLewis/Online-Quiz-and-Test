@@ -84,3 +84,10 @@ CREATE TABLE answer (
   submit_time timestamp NOT NULL,
   details varchar(20000) NOT NULL
 );
+
+CREATE TABLE assessment_start_time (
+  id SERIAL PRIMARY KEY,
+  userid int NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  aciid int NOT NULL REFERENCES assessment_course_assoc(id) ON DELETE CASCADE,
+  time_started timestamp
+);
