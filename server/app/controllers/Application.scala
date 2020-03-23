@@ -26,6 +26,8 @@ import java.sql.Timestamp
 class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvider, cc: ControllerComponents)(implicit ec: ExecutionContext) 
     extends AbstractController(cc) with HasDatabaseConfigProvider[JdbcProfile] {
 
+      println("!!!!!!!" + System.getenv("JDBC_DATABASE_URL"))
+
   import ControlHelpers._
   implicit val actionBuilder = Action
 
