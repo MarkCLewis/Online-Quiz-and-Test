@@ -25,7 +25,7 @@ import onlineclassroom.ReadsAndWrites._
         cols := "100", rows := "8"
       ),
       br(),
-      DrawAnswerComponent(props.info.initialElements, props.lastAnswer.map(_.elements).getOrElse(Nil), 800, 400, props.editable, e => { saveElements(e); setState(state.copy(answer = state.answer.copy(elements = e))) }),
+      DrawAnswerComponent(false,props.info.initialElements, props.lastAnswer.map(_.elements).getOrElse(Nil), 800, 400, props.editable, e => { saveElements(e); setState(state.copy(answer = state.answer.copy(elements = e))) }),
       br(),
       state.message
     )

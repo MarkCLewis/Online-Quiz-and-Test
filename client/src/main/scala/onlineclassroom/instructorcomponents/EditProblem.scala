@@ -43,7 +43,7 @@ import onlineclassroom.ReadsAndWrites._
             br(),
             "Initial Elements:",
             br(),
-            DrawAnswerComponent(Nil, initialElements, 800, 400, true, elems => setState(state.copy(problemSpec = ps.copy(info = info.copy(initialElements = elems)))))
+            DrawAnswerComponent(true, Nil, initialElements, 800, 400, true, elems => setState(state.copy(problemSpec = ps.copy(info = info.copy(initialElements = elems)))))
           )
         // TODO: Need to add in other types of problems for editing.
       },

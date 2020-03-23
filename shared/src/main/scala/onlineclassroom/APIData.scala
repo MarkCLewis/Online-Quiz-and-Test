@@ -125,3 +125,4 @@ case class StudentProblemSpec(paaid: Int, assessmentid: Int, problemid: Int, wei
 case class SaveAnswerInfo(id: Int, userid: Int, courseid: Int, paaid: Int, answer: ProblemAnswer)
 
 case class ProblemAssessmentAssociation(id: Int, assessmentid: Int, problemid: Int, weight: Double, extraCredit: Boolean)
+

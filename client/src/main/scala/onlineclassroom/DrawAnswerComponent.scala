@@ -15,6 +15,8 @@ import slinky.core.SyntheticEvent
 import org.scalajs.dom.raw.Event
 import org.scalajs.dom.raw.KeyboardEvent
 import slinky.web.html.selected
+import slinky.web.html.button
+import slinky.web.html.div
 
 object Modes extends Enumeration {
   val Select, RefBox, ValBox, DoubleNode, TripleNode, Array, Connector, Curve, Text, Nothing = this.Value
@@ -25,11 +27,11 @@ object Modes extends Enumeration {
   val boxSize = 20
   val curveOffset = 50
 
-  case class Props(initialElements: Seq[DrawAnswerElement], editableElements: Seq[DrawAnswerElement], width: Double, height: Double, editable: Boolean,
+  case class Props(startVisible: Boolean, initialElements: Seq[DrawAnswerElement], editableElements: Seq[DrawAnswerElement], width: Double, height: Double, editable: Boolean,
     setElements: Seq[DrawAnswerElement] => Unit)
-  case class State(svgElements: Seq[DrawAnswerElement], selected: Int, subselected: Int, mode: Modes.Value, downLoc: Option[(Double, Double)], curLoc: Option[(Double, Double)])
+  case class State(visible: Boolean, svgElements: Seq[DrawAnswerElement], selected: Int, subselected: Int, mode: Modes.Value, downLoc: Option[(Double, Double)], curLoc: Option[(Double, Double)])
   
-  def initialState = State(props.editableElements, -1, -1, if (props.editable) Modes.Select else Modes.Nothing, None, None)
+  def initialState = State(props.startVisible, props.editableElements, -1, -1, if (props.editable) Modes.Select else Modes.Nothing, None, None)
 
   override def componentDidMount(): Unit = {
     org.scalajs.dom.window.addEventListener("keydown", keyDownHandler)
@@ -40,27 +42,40 @@ object Modes extends Enumeration {
   }
 
   def render(): ReactElement = {
-    svg(
-      width := props.width.toString, 
-      height := props.height.toString, 
-      stroke := "black", fill := "white",
-      svg (
-        defs (
-          marker (
-            id := "arrow", viewBox := "0 0 10 10", refX := 5, refY := 5, markerWidth := 6, markerHeight := 6, orient := "auto",
-            path (d := "M 0 0 L 10 5 L 0 10 z")
-          )
+    if (state.visible) {
+      div (
+        svg(
+          width := props.width.toString, 
+          height := props.height.toString, 
+          stroke := "black", fill := "white",
+          svg (
+            defs (
+              marker (
+                id := "arrow", viewBox := "0 0 10 10", refX := 5, refY := 5, markerWidth := 6, markerHeight := 6, orient := "auto",
+                path (d := "M 0 0 L 10 5 L 0 10 z")
+              )
+            ),
+            rect (width := props.width.toString, height := props.height.toString),
+            props.initialElements.zipWithIndex.map(t => elementToSVG((t._1, t._2 - 1000000), 0)) ++ 
+            state.svgElements.zipWithIndex.map(t => elementToSVG(t, props.initialElements.length)) :+
+            (if (props.editable) controlElements() else svg( key := "toolbar" ): ReactElement)
+          ),
+          onMouseDown := (e => mouseDownHandler(e)),
+          onMouseMove := (e => mouseMoveHandler(e)),
+          onMouseUp := (e => mouseUpHandler(e)),
+          onMouseLeave := { e => setState(state.copy(selected = -1)); props.setElements(state.svgElements) }
         ),
-        rect (width := props.width.toString, height := props.height.toString),
-        props.initialElements.zipWithIndex.map(t => elementToSVG((t._1, t._2 - 1000000), 0)) ++ 
-        state.svgElements.zipWithIndex.map(t => elementToSVG(t, props.initialElements.length)) :+
-        (if (props.editable) controlElements() else svg( key := "toolbar" ): ReactElement)
-      ),
-      onMouseDown := (e => mouseDownHandler(e)),
-      onMouseMove := (e => mouseMoveHandler(e)),
-      onMouseUp := (e => mouseUpHandler(e)),
-      onMouseLeave := { e => setState(state.copy(selected = -1)); props.setElements(state.svgElements) }
-    )    
+        {
+          import slinky.web.html._
+          button ("Hide Drawing", onClick := (e => setState(state.copy(visible = false))))
+        }
+      )
+    } else {
+      div {
+        import slinky.web.html._
+        button ("Show Drawing", onClick := (e => setState(state.copy(visible = true))))
+      }
+    }    
   }
 
   def controlElements(): ReactElement = {

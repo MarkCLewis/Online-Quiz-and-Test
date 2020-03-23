@@ -46,16 +46,12 @@ object InstructorCourseViewModes extends Enumeration {
       case Some(gd) =>
         state.mode match {
           case InstructorCourseViewModes.Normal =>
-            val adMap = props.allAssessments.map(ad => ad.id -> ad).toMap
-            println(adMap)
+            val aciMap = gd.assessments.map(aci => aci.id -> aci).toMap
+            val aciByName = gd.assessments.map(aci => aci.name -> aci).toMap
             val groupedAssessments = gd.assessments.groupBy(_.group)
-            println(groupedAssessments)
             val groups = groupedAssessments.keys.toSeq.sortWith((g1, g2) => if (g1.isEmpty || g2.isEmpty) g1 > g2 else g1 < g2)
-            println(groups)
             val formulaMap = gd.formulas.map(f => f.groupName -> f.formula).toMap
-            println(formulaMap)
             val groupColumns = groupedAssessments.map { case (group, saci) => group -> (saci.map(_.name).sorted ++ (if (formulaMap.contains(group)) Seq("Total") else Nil))}
-            println(groupColumns)
             div (
               h2 (s"${props.course.name}-${props.course.semester}-${props.course.section}", button ("Done", onClick := (e => props.exitFunc()))),
               h3 ("Students"),
@@ -63,7 +59,8 @@ object InstructorCourseViewModes extends Enumeration {
                 thead (
                   tr ( th ("Email", rowSpan := 2), th ("Time Multiplier", rowSpan := 2), 
                     groups.zipWithIndex.map { case (g, i) => th (key := i.toString, g, colSpan := groupColumns(g).length)}),
-                  tr ( groups.zipWithIndex.map { case (g, i) => groupColumns(g).zipWithIndex.map { case (colHead, j) => th (key := (i*100+j).toString, colHead)}})
+                  tr ( groups.zipWithIndex.map { case (g, i) => groupColumns(g).zipWithIndex.map { case (colHead, j) => 
+                    th (key := (i*100+j).toString, colHead, onClick := (e => setState(state.copy(mode = InstructorCourseViewModes.Grading, selectedAssessment = aciByName.get(colHead)))))}})
                 ),
                 tbody (
                   state.studentData.zipWithIndex.map { case (sd, i) =>
@@ -83,7 +80,7 @@ object InstructorCourseViewModes extends Enumeration {
                 props.allAssessments.zipWithIndex.map { case (ad, i) => option (key := i.toString, value := ad.id.toString, ad.name) },
                 onChange := (e => if(e.target.value != "-1") {
                   val adid = e.target.value.toInt
-                  updateAssessmentCourseAssoc(AssessmentCourseInfo(-1, props.course.id, adid, adMap(adid).name, adMap(adid).description, 100, "", AutoGradeOptions.Never, None, None, None), -1)
+                  updateAssessmentCourseAssoc(AssessmentCourseInfo(-1, props.course.id, adid, aciMap(adid).name, aciMap(adid).description, 100, "", AutoGradeOptions.Never, None, None, None), -1)
                 })
               ),
               br(),

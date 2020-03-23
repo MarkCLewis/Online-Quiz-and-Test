@@ -26,8 +26,6 @@ import java.sql.Timestamp
 class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvider, cc: ControllerComponents)(implicit ec: ExecutionContext) 
     extends AbstractController(cc) with HasDatabaseConfigProvider[JdbcProfile] {
 
-      println("!!!!!!!" + System.getenv("JDBC_DATABASE_URL"))
-
   import ControlHelpers._
   implicit val actionBuilder = Action
 
@@ -106,7 +104,7 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
       (for {
         ad <- assessmentData
         sd <- studentData
-      } yield FullInstructorCourseData(sd, ad)).map { t =>println(t); Ok(Json.toJson(t)) }
+      } yield FullInstructorCourseData(sd, ad)).map { t => Ok(Json.toJson(t)) }
     }
   }
 
