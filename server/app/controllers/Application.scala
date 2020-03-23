@@ -198,4 +198,10 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
       model.mergeAnswer(sai, None).map(aid => Ok(Json.toJson(aid)))
     }
   }
+
+  def addStudentToCourse = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[(String, Int)] { case (email, courseid) =>
+      model.addStudentToCourse(email, courseid).map(num => Ok(Json.toJson(num)))
+    }
+  }
 }

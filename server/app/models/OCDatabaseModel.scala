@@ -294,4 +294,13 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
       flatMap(cnt => db.run(Answer.map(_.id).max.getOrElse(-1).result))
   }
 
+  def addStudentToCourse(email: String, courseid: Int): Future[Int] = {
+    println(s"Searching for $email")
+    val student = db.run(Users.filter(_.email === email).result)
+    student.flatMap { s => 
+      println(s"Adding $s")
+      if (s.nonEmpty) {
+        db.run(UserCourseAssoc += UserCourseAssocRow(s.head.id, courseid, 1.0))
+      } else Future.successful(0)}
+  }
 }

@@ -31,9 +31,9 @@ object InstructorCourseViewModes extends Enumeration {
 @react class ViewCourse extends Component {
   case class Props(userData: UserData, course: CourseData, allAssessments: Seq[AssessmentData], exitFunc: () => Unit)
   case class State(message: String, mode: InstructorCourseViewModes.Value, studentData: Seq[FullStudentData], gradeData: Option[CourseGradeInformation], 
-    selectedAssessment: Option[AssessmentCourseInfo])
+    selectedAssessment: Option[AssessmentCourseInfo], newStudentEmail: String)
 
-  def initialState: State = State("", InstructorCourseViewModes.Normal, Nil, None, None)
+  def initialState: State = State("", InstructorCourseViewModes.Normal, Nil, None, None, "")
 
   override def componentDidMount(): Unit = {
     loadData()
@@ -73,6 +73,9 @@ object InstructorCourseViewModes extends Enumeration {
                 )
               ),
               hr (),
+              "Add Student by email:",
+              input (`type` := "text", value := state.newStudentEmail, onChange := (e => setState(state.copy(newStudentEmail = e.target.value)))),
+              button ("Add", onClick := (e => { addStudent(state.newStudentEmail); setState(state.copy(newStudentEmail = ""))})),
               h3 ("Assessments"),
               "Add Assessment:",
               select (
@@ -163,5 +166,11 @@ object InstructorCourseViewModes extends Enumeration {
     val regex = """\d{4}-\d{1,2}-\d{1,2} \d\d?:\d\d?:\d\d?(\.\d+)?"""
     println(ostr, ostr.map(_.matches(regex)))
     ostr.filter(_.matches(regex))
+  }
+
+  def addStudent(email: String): Unit = {
+    PostFetch.fetch("/addStudentToCourse", (email, props.course.id),
+      (num: Int) => if (num > 0) loadData() else setState(state.copy(message = "Failed to add student.")),
+      e => setState(_.copy(message = "Error with Json adding student to course.")))
   }
 }
