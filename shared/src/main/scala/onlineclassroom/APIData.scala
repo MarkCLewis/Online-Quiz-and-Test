@@ -118,6 +118,8 @@ case class ProblemSpec(id: Int, info: ProblemInfo, answerInfo: ProblemGradeInfo)
   }
 }
 
+// case class ProblemSpecWithAnswers(id: Int, )
+
 case class StudentProblemSpec(paaid: Int, assessmentid: Int, problemid: Int, weight: Double, extraCredit: Boolean, info: ProblemInfo, answer: Option[ProblemAnswer])
 
 case class SaveAnswerInfo(id: Int, userid: Int, courseid: Int, paaid: Int, answer: ProblemAnswer)

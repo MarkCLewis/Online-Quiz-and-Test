@@ -149,13 +149,11 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
       t <- uca
       g <- grades
     } yield {
-      println(s"sgd $userid $s $g $t")
       FullStudentData(s.head.id, s.head.email, g.toMap, t.head.timeMultiplier)
     }
   }
 
   def courseStudentGradeData(courseid: Int, instructorid: Int): Future[Seq[FullStudentData]] = {
-    println(s"courseStudentGradeData($courseid, $instructorid)")
     db.run(UserCourseAssoc.filter(uca => uca.courseid === courseid && uca.userid =!= instructorid).result).flatMap(s => Future.sequence(s.map(uca => studentGradeData(uca.userid, uca.courseid))))
   }
 
@@ -277,7 +275,6 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
   }
 
   def mergeAnswer(sai: SaveAnswerInfo, percent: Option[Double]): Future[Int] = {
-    println(s"Merging $sai")
     if (sai.id >= 0) {
       db.run(Answer.filter(_.id === sai.id)
         .update(AnswerRow(sai.id, sai.userid, sai.courseid, sai.paaid, percent, new Timestamp(System.currentTimeMillis()), Json.toJson(sai.answer).toString())))

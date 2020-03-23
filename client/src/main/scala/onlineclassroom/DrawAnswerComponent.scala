@@ -17,7 +17,7 @@ import org.scalajs.dom.raw.KeyboardEvent
 import slinky.web.html.selected
 
 object Modes extends Enumeration {
-  val Select, RefBox, ValBox, DoubleNode, TripleNode, Array, Connector, Curve, Text = this.Value
+  val Select, RefBox, ValBox, DoubleNode, TripleNode, Array, Connector, Curve, Text, Nothing = this.Value
 }
 
 @react class DrawAnswerComponent extends Component {
@@ -29,7 +29,7 @@ object Modes extends Enumeration {
     setElements: Seq[DrawAnswerElement] => Unit)
   case class State(svgElements: Seq[DrawAnswerElement], selected: Int, subselected: Int, mode: Modes.Value, downLoc: Option[(Double, Double)], curLoc: Option[(Double, Double)])
   
-  def initialState = State(props.editableElements, -1, -1, Modes.Select, None, None)
+  def initialState = State(props.editableElements, -1, -1, if (props.editable) Modes.Select else Modes.Nothing, None, None)
 
   override def componentDidMount(): Unit = {
     org.scalajs.dom.window.addEventListener("keydown", keyDownHandler)
@@ -256,6 +256,7 @@ object Modes extends Enumeration {
         setState(state.copy(svgElements = addElement(Curve(Seq(x -> y))), selected = 0, subselected = 0, downLoc = Some(x -> y)))
       case Modes.Text =>
         setState(state.copy(svgElements = addElement(Text(x, y, "_")), selected = 0, subselected = 0))
+      case Modes.Nothing =>
     }
   }
 
