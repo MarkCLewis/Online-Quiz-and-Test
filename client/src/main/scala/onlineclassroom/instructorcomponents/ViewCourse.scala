@@ -12,6 +12,7 @@ package onlineclassroom.instructorcomponents
 // Grade an assessment
 // Make it so we have groups of assessments each with their own total/average
 
+import scalajs.js
 import org.scalajs.dom
 import slinky.core.Component
 import slinky.core.annotations.react
@@ -153,6 +154,7 @@ object InstructorCourseViewModes extends Enumeration {
   }
 
   def updateAssessmentCourseAssoc(aciUnclean: AssessmentCourseInfo, index: Int): Unit = {
+    println(aciUnclean)
     val aci = aciUnclean.copy(start = cleanDateTime(aciUnclean.start), end = cleanDateTime(aciUnclean.end))
     PostFetch.fetch("/saveAssessmentCourseAssoc", aci,
       (aciid: Int) => {

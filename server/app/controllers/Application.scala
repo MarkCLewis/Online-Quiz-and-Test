@@ -152,6 +152,7 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
 
   def saveAssessmentCourseAssoc = AuthenticatedInstructorAction { implicit request =>
     withJsonBody[AssessmentCourseInfo] { aci =>
+      println(aci)
       model.saveAssessmentCourseAssoc(aci).map(id => Ok(Json.toJson(id)))
     }
   }
