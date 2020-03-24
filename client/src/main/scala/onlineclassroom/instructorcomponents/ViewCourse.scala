@@ -47,7 +47,7 @@ object InstructorCourseViewModes extends Enumeration {
       case Some(gd) =>
         state.mode match {
           case InstructorCourseViewModes.Normal =>
-            val aciMap = gd.assessments.map(aci => aci.id -> aci).toMap
+            val adMap = props.allAssessments.map(ad => ad.id -> ad).toMap
             val aciByName = gd.assessments.map(aci => aci.name -> aci).toMap
             val groupedAssessments = gd.assessments.groupBy(_.group)
             val groups = groupedAssessments.keys.toSeq.sortWith((g1, g2) => if (g1.isEmpty || g2.isEmpty) g1 > g2 else g1 < g2)
@@ -84,7 +84,9 @@ object InstructorCourseViewModes extends Enumeration {
                 props.allAssessments.zipWithIndex.map { case (ad, i) => option (key := i.toString, value := ad.id.toString, ad.name) },
                 onChange := (e => if(e.target.value != "-1") {
                   val adid = e.target.value.toInt
-                  updateAssessmentCourseAssoc(AssessmentCourseInfo(-1, props.course.id, adid, aciMap(adid).name, aciMap(adid).description, 100, "", AutoGradeOptions.Never, None, None, None), -1)
+                  if (adid >= 0) {
+                    updateAssessmentCourseAssoc(AssessmentCourseInfo(-1, props.course.id, adid, adMap(adid).name, adMap(adid).description, 100, "", AutoGradeOptions.Never, None, None, None), -1)
+                  }
                 })
               ),
               br(),
