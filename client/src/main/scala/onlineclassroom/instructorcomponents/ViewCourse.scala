@@ -50,9 +50,13 @@ object InstructorCourseViewModes extends Enumeration {
             val adMap = props.allAssessments.map(ad => ad.id -> ad).toMap
             val aciByName = gd.assessments.map(aci => aci.name -> aci).toMap
             val groupedAssessments = gd.assessments.groupBy(_.group)
+            println(s"groupedAssessments: $groupedAssessments")
             val groups = groupedAssessments.keys.toSeq.sortWith((g1, g2) => if (g1.isEmpty || g2.isEmpty) g1 > g2 else g1 < g2)
+            println(s"groups: $groups")
             val formulaMap = gd.formulas.map(f => f.groupName -> f.formula).toMap
+            println(s"formulaMap: $formulaMap")
             val groupColumns = groupedAssessments.map { case (group, saci) => group -> (saci.map(_.name).sorted ++ (if (formulaMap.contains(group)) Seq("Total") else Nil))}
+            println(s"groupColumns: $groupColumns")
             div (
               h2 (s"${props.course.name}-${props.course.semester}-${props.course.section}", button ("Done", onClick := (e => props.exitFunc()))),
               h3 ("Students"),
@@ -67,9 +71,9 @@ object InstructorCourseViewModes extends Enumeration {
                   state.studentData.zipWithIndex.map { case (sd, i) =>
                     tr (key := i.toString, 
                       td (sd.email), 
-                      td (input (`type` := "number", value := sd.timeMultiplier.toString, onChange := (e => ???))), 
+                      td (input (`type` := "number", value := sd.timeMultiplier.toString, onChange := (e => {}))), 
                       groups.zipWithIndex.map { case (g, j) => groupColumns(g).zipWithIndex.map { case (colHead, k) => td (key := (j*100+k).toString, 
-                        if (sd.grades.contains(colHead)) sd.grades(colHead) else calcFormula(sd.grades, formulaMap(g)))}})
+                        if (sd.grades.contains(colHead)) sd.grades(colHead) else calcFormula(sd.grades, formulaMap.get(g).getOrElse("")))}})
                   }
                 )
               ),
