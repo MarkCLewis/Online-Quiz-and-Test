@@ -38,7 +38,6 @@ import scala.scalajs.js.Date
   }
 
   def render: ReactElement = {
-    println(state.start)
     val open = TimeMethods.assessmentOpen(props.aci, state.start, state.serverTime)
     val remainingMilis = TimeMethods.timeRemaining(props.aci, state.start, state.serverTime)
     val remainingStr = TimeMethods.millisToHMS(remainingMilis)

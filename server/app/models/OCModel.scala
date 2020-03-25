@@ -25,7 +25,9 @@ trait OCModel {
   def getStudentStarts(userid: Int, courseid: Int): Future[Seq[StudentAssessmentStart]]
   def getAssessmentProblems(userid: Int, courseid: Int, assessmentid: Int, aciid: Int): Future[Seq[StudentProblemSpec]]
   def startAssessment(userid: Int, aciid: Int): Future[StudentAssessmentStart]
-  def mergeAnswer(sai: SaveAnswerInfo, percent: Option[Double]): Future[Int]
-  def addAnswer(sai: SaveAnswerInfo, percent: Option[Double]): Future[Int]
+  def mergeAnswer(sai: SaveAnswerInfo): Future[Int]
+  def addAnswer(sai: SaveAnswerInfo): Future[Int]
   def addStudentToCourse(email: String, courseid: Int): Future[Int]
+  def assessmentGradingData(courseid: Int, assessmentid: Int): Future[AssessmentGradingData]
+  def setGradeData(gd: GradeData): Future[Int]
 }

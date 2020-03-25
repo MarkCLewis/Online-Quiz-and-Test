@@ -70,7 +70,7 @@ object InstructorCourseViewModes extends Enumeration {
                 tbody (
                   state.studentData.zipWithIndex.map { case (sd, i) =>
                     tr (key := i.toString, 
-                      td (sd.email), 
+                      td (sd.email, className := "outlined"), 
                       td (input (`type` := "number", value := sd.timeMultiplier.toString, onChange := (e => {}))), 
                       groups.zipWithIndex.map { case (g, j) => groupColumns(g).zipWithIndex.map { case (colHead, k) => td (key := (j*100+k).toString, 
                         if (sd.grades.contains(colHead)) sd.grades(colHead) else calcFormula(sd.grades, formulaMap.get(g).getOrElse("")))}})
@@ -95,11 +95,11 @@ object InstructorCourseViewModes extends Enumeration {
               ),
               br(),
               "Times in yyyy-[m]m-[d]d hh:mm:ss[.f...] format",
-              table (
+              table ( className := "outlined",
                 thead (
                   tr (th ("Name"), th("Description"), th("Points"), th("Group"), th("Autograde"), th("Start"), th("End"), th("Minutes"))            
                 ),
-                tbody (
+                tbody ( className := "outlined",
                   state.gradeData.map { gd =>
                     gd.assessments.zipWithIndex.map { case (a, i) => tr ( key := i.toString,
                       td (a.name), td (a.description), 

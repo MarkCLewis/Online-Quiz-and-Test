@@ -80,9 +80,16 @@ CREATE TABLE answer (
   userid int NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   courseid int NOT NULL REFERENCES course(id) ON DELETE CASCADE,
   paaid int NOT NULL REFERENCES problem_assessment_assoc(id) ON DELETE CASCADE,
-  percent_correct double precision,
   submit_time timestamp NOT NULL,
   details varchar(20000) NOT NULL
+);
+
+ALTER TABLE answer DROP COLUMN percent_correct;
+CREATE TABLE answer_grade (
+  id SERIAL PRIMARY KEY,
+  answerid int NOT NULL REFERENCES answer(id) ON DELETE CASCADE,
+  percent_correct double precision NOT NULL,
+  comments varchar(200) NOT NULL
 );
 
 CREATE TABLE assessment_start_time (

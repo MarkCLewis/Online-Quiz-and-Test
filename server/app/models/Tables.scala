@@ -14,7 +14,7 @@ trait Tables {
   import slick.jdbc.{GetResult => GR}
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Array(Answer.schema, Assessment.schema, AssessmentCourseAssoc.schema, AssessmentStartTime.schema, Course.schema, GradeFormula.schema, Problem.schema, ProblemAssessmentAssoc.schema, UserCourseAssoc.schema, Users.schema).reduceLeft(_ ++ _)
+  lazy val schema: profile.SchemaDescription = Array(Answer.schema, AnswerGrade.schema, Assessment.schema, AssessmentCourseAssoc.schema, AssessmentStartTime.schema, Course.schema, GradeFormula.schema, Problem.schema, ProblemAssessmentAssoc.schema, UserCourseAssoc.schema, Users.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -23,20 +23,19 @@ trait Tables {
    *  @param userid Database column userid SqlType(int4)
    *  @param courseid Database column courseid SqlType(int4)
    *  @param paaid Database column paaid SqlType(int4)
-   *  @param percentCorrect Database column percent_correct SqlType(float8), Default(None)
    *  @param submitTime Database column submit_time SqlType(timestamp without time zone)
    *  @param details Database column details SqlType(varchar), Length(20000,true) */
-  case class AnswerRow(id: Int, userid: Int, courseid: Int, paaid: Int, percentCorrect: Option[Double] = None, submitTime: java.sql.Timestamp, details: String)
+  case class AnswerRow(id: Int, userid: Int, courseid: Int, paaid: Int, submitTime: java.sql.Timestamp, details: String)
   /** GetResult implicit for fetching AnswerRow objects using plain SQL queries */
-  implicit def GetResultAnswerRow(implicit e0: GR[Int], e1: GR[Option[Double]], e2: GR[java.sql.Timestamp], e3: GR[String]): GR[AnswerRow] = GR{
+  implicit def GetResultAnswerRow(implicit e0: GR[Int], e1: GR[java.sql.Timestamp], e2: GR[String]): GR[AnswerRow] = GR{
     prs => import prs._
-    AnswerRow.tupled((<<[Int], <<[Int], <<[Int], <<[Int], <<?[Double], <<[java.sql.Timestamp], <<[String]))
+    AnswerRow.tupled((<<[Int], <<[Int], <<[Int], <<[Int], <<[java.sql.Timestamp], <<[String]))
   }
   /** Table description of table answer. Objects of this class serve as prototypes for rows in queries. */
   class Answer(_tableTag: Tag) extends profile.api.Table[AnswerRow](_tableTag, "answer") {
-    def * = (id, userid, courseid, paaid, percentCorrect, submitTime, details) <> (AnswerRow.tupled, AnswerRow.unapply)
+    def * = (id, userid, courseid, paaid, submitTime, details) <> (AnswerRow.tupled, AnswerRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = ((Rep.Some(id), Rep.Some(userid), Rep.Some(courseid), Rep.Some(paaid), percentCorrect, Rep.Some(submitTime), Rep.Some(details))).shaped.<>({r=>import r._; _1.map(_=> AnswerRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = ((Rep.Some(id), Rep.Some(userid), Rep.Some(courseid), Rep.Some(paaid), Rep.Some(submitTime), Rep.Some(details))).shaped.<>({r=>import r._; _1.map(_=> AnswerRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -46,8 +45,6 @@ trait Tables {
     val courseid: Rep[Int] = column[Int]("courseid")
     /** Database column paaid SqlType(int4) */
     val paaid: Rep[Int] = column[Int]("paaid")
-    /** Database column percent_correct SqlType(float8), Default(None) */
-    val percentCorrect: Rep[Option[Double]] = column[Option[Double]]("percent_correct", O.Default(None))
     /** Database column submit_time SqlType(timestamp without time zone) */
     val submitTime: Rep[java.sql.Timestamp] = column[java.sql.Timestamp]("submit_time")
     /** Database column details SqlType(varchar), Length(20000,true) */
@@ -62,6 +59,38 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table Answer */
   lazy val Answer = new TableQuery(tag => new Answer(tag))
+
+  /** Entity class storing rows of table AnswerGrade
+   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
+   *  @param answerid Database column answerid SqlType(int4)
+   *  @param percentCorrect Database column percent_correct SqlType(float8)
+   *  @param comments Database column comments SqlType(varchar), Length(200,true) */
+  case class AnswerGradeRow(id: Int, answerid: Int, percentCorrect: Double, comments: String)
+  /** GetResult implicit for fetching AnswerGradeRow objects using plain SQL queries */
+  implicit def GetResultAnswerGradeRow(implicit e0: GR[Int], e1: GR[Double], e2: GR[String]): GR[AnswerGradeRow] = GR{
+    prs => import prs._
+    AnswerGradeRow.tupled((<<[Int], <<[Int], <<[Double], <<[String]))
+  }
+  /** Table description of table answer_grade. Objects of this class serve as prototypes for rows in queries. */
+  class AnswerGrade(_tableTag: Tag) extends profile.api.Table[AnswerGradeRow](_tableTag, "answer_grade") {
+    def * = (id, answerid, percentCorrect, comments) <> (AnswerGradeRow.tupled, AnswerGradeRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = ((Rep.Some(id), Rep.Some(answerid), Rep.Some(percentCorrect), Rep.Some(comments))).shaped.<>({r=>import r._; _1.map(_=> AnswerGradeRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
+    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
+    /** Database column answerid SqlType(int4) */
+    val answerid: Rep[Int] = column[Int]("answerid")
+    /** Database column percent_correct SqlType(float8) */
+    val percentCorrect: Rep[Double] = column[Double]("percent_correct")
+    /** Database column comments SqlType(varchar), Length(200,true) */
+    val comments: Rep[String] = column[String]("comments", O.Length(200,varying=true))
+
+    /** Foreign key referencing Answer (database name answer_grade_answerid_fkey) */
+    lazy val answerFk = foreignKey("answer_grade_answerid_fkey", answerid, Answer)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.Cascade)
+  }
+  /** Collection-like TableQuery object for table AnswerGrade */
+  lazy val AnswerGrade = new TableQuery(tag => new AnswerGrade(tag))
 
   /** Entity class storing rows of table Assessment
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey

@@ -197,7 +197,17 @@ object ReadsAndWrites {
 
   implicit val saveAnswerInfoWrites = Json.writes[SaveAnswerInfo]
   implicit val saveAnswerInfoReads = Json.reads[SaveAnswerInfo]
+
+  implicit val gradeDataWrites = Json.writes[GradeData]
+  implicit val gradeDataReads = Json.reads[GradeData]
+
+  implicit val gradeAnswerWrites = Json.writes[GradeAnswer]
+  implicit val gradeAnswerReads = Json.reads[GradeAnswer]
+
+  implicit val gradingProblemDataWrites = Json.writes[GradingProblemData]
+  implicit val gradingProblemDataReads = Json.reads[GradingProblemData]
+
+  implicit val assessmentGradingDataWrites = Json.writes[AssessmentGradingData]
+  implicit val assessmentGradingDataReads = Json.reads[AssessmentGradingData]
   
-  // implicit val gradeAnswerWrites = Json.writes[GradeAnswer]
-  // implicit val gradeAnswerReads = Json.reads[GradeAnswer]
 }

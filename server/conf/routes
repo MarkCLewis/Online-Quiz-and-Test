@@ -29,6 +29,8 @@ POST       /startAssessment              controllers.Application.startAssessment
 POST       /mergeAnswer                  controllers.Application.mergeAnswer
 POST       /addAnswer                    controllers.Application.addAnswer
 POST       /addStudentToCourse           controllers.Application.addStudentToCourse
+POST       /assessmentGradingData        controllers.Application.assessmentGradingData
+POST       /setGradeData                 controllers.Application.setGradeData
 
 # Prefix must match `play.assets.urlPrefix`
 GET        /assets/*file                 controllers.Assets.at(file)

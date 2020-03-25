@@ -1,10 +1,9 @@
 .outlined {
-  border-width: 1;
+  border: 1px solid black;
 }
 
 td {
-  border-width: 1;
-  border-color: "black";
+  border: 1px solid black;
 }
 
 th {

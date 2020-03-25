@@ -41,9 +41,11 @@ import onlineclassroom.ReadsAndWrites._
             br(),
             textarea (value := prompt, cols := "100", rows := "8", onChange := (e => setState(state.copy(problemSpec = ps.copy(info = info.copy(prompt = e.target.value)))))),
             br(),
-            "Initial Elements:",
+            "Initial Elements (Don't add connections.):",
             br(),
-            DrawAnswerComponent(true, Nil, initialElements, 800, 400, true, elems => setState(state.copy(problemSpec = ps.copy(info = info.copy(initialElements = elems)))))
+            DrawAnswerComponent(true, Nil, initialElements, 800, 400, true, 
+              elems => setState(state.copy(problemSpec = ps.copy(info = info.copy(initialElements = elems)))),
+              elems => setState(state.copy(problemSpec = ps.copy(info = info.copy(initialElements = elems)))))
           )
         // TODO: Need to add in other types of problems for editing.
       },
@@ -56,6 +58,7 @@ import onlineclassroom.ReadsAndWrites._
 
   implicit val ec = ExecutionContext.global
 
+  // TODO: Any connection put in the initial elements will break things. Have to remap the connections for that to work.
   def saveProblem(updateState: Boolean): Unit = {
     PostFetch.fetch("/saveProblem", state.problemSpec,
       (newID: Int) => {

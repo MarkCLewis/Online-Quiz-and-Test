@@ -189,20 +189,32 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
 
   def mergeAnswer = AuthenticatedAction { implicit request =>
     withJsonBody[SaveAnswerInfo] { sai =>
-      model.mergeAnswer(sai, None).map(aid => Ok(Json.toJson(aid)))
+      model.mergeAnswer(sai).map(aid => Ok(Json.toJson(aid)))
     }
   }
 
   def addAnswer = AuthenticatedAction { implicit request =>
     // TODO: This doesn't currently handle auto-grading. That will be needed.
     withJsonBody[SaveAnswerInfo] { sai =>
-      model.mergeAnswer(sai, None).map(aid => Ok(Json.toJson(aid)))
+      model.mergeAnswer(sai).map(aid => Ok(Json.toJson(aid)))
     }
   }
 
   def addStudentToCourse = AuthenticatedInstructorAction { implicit request =>
     withJsonBody[(String, Int)] { case (email, courseid) =>
       model.addStudentToCourse(email, courseid).map(num => Ok(Json.toJson(num)))
+    }
+  }
+
+  def assessmentGradingData = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[(Int, Int)] { case (courseid, assessmentid) =>
+      model.assessmentGradingData(courseid, assessmentid).map(agd => Ok(Json.toJson(agd)))
+    }
+  }
+
+  def setGradeData = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[GradeData] { gd =>
+      model.setGradeData(gd).map(newid => Ok(Json.toJson(newid)))
     }
   }
 }

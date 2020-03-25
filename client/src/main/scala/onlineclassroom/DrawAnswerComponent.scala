@@ -27,8 +27,8 @@ object Modes extends Enumeration {
   val boxSize = 20
   val curveOffset = 50
 
-  case class Props(startVisible: Boolean, initialElements: Seq[DrawAnswerElement], editableElements: Seq[DrawAnswerElement], width: Double, height: Double, editable: Boolean,
-    setElements: Seq[DrawAnswerElement] => Unit)
+  case class Props(startVisible: Boolean, initialElements: Seq[DrawAnswerElement], editableElements: Seq[DrawAnswerElement], width: Double, height: Double, 
+    editable: Boolean, setElements: Seq[DrawAnswerElement] => Unit, saveElements: Seq[DrawAnswerElement] => Unit)
   case class State(visible: Boolean, svgElements: Seq[DrawAnswerElement], selected: Int, subselected: Int, mode: Modes.Value, downLoc: Option[(Double, Double)], curLoc: Option[(Double, Double)])
   
   def initialState = State(props.startVisible, props.editableElements, -1, -1, if (props.editable) Modes.Select else Modes.Nothing, None, None)
@@ -63,7 +63,7 @@ object Modes extends Enumeration {
           onMouseDown := (e => mouseDownHandler(e)),
           onMouseMove := (e => mouseMoveHandler(e)),
           onMouseUp := (e => mouseUpHandler(e)),
-          onMouseLeave := { e => setState(state.copy(selected = -1)); props.setElements(state.svgElements) }
+          onMouseLeave := { e => setState(state.copy(selected = -1)); props.saveElements(state.svgElements) }
         ),
         {
           import slinky.web.html._
@@ -226,24 +226,24 @@ object Modes extends Enumeration {
         setState(state.copy(svgElements = removeElement(state.selected), selected = -1))
       } else state.svgElements(state.selected) match {
         case elem@ReferenceBox(px, py, label) => 
-          helper(0, label, str => setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(elem.copy(label = str)), 1))))
+          helper(0, label, str => updateElement(state.selected, elem.copy(label = str)))
         case elem@ValueBox(px, py, value, label) =>
-          helper(1, if (state.subselected == 0) value else label, str => setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(if (state.subselected == 0) elem.copy(value = str) else elem.copy(label = str)), 1))))
+          helper(1, if (state.subselected == 0) value else label, str => updateElement(state.selected, if (state.subselected == 0) elem.copy(value = str) else elem.copy(label = str)))
         case elem@DoubleBox(px, py, value, label) => 
-          helper(1, if (state.subselected == 0) value else label, str => setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(if (state.subselected == 0) elem.copy(value = str) else elem.copy(label = str)), 1))))
+          helper(1, if (state.subselected == 0) value else label, str => updateElement(state.selected, if (state.subselected == 0) elem.copy(value = str) else elem.copy(label = str)))
         case elem@TripleBox(px, py, value, label) => 
-          helper(1, if (state.subselected == 0) value else label, str => setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(if (state.subselected == 0) elem.copy(value = str) else elem.copy(label = str)), 1))))
+          helper(1, if (state.subselected == 0) value else label, str => updateElement(state.selected, if (state.subselected == 0) elem.copy(value = str) else elem.copy(label = str)))
         case elem@ArrayOfBoxes(px, py, values, label) => 
           if (e.key == "Insert" || (e.ctrlKey && e.key == "i")) {
-            setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(elem.copy(values = values :+ "")), 1)))
+            updateElement(state.selected, elem.copy(values = values :+ ""))
           } else if ((e.key == "Delete"  || (e.ctrlKey && e.key == "z")) && values.length > 1) {
-            setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(elem.copy(values = values.dropRight(1))), 1)))
+            updateElement(state.selected, elem.copy(values = values.dropRight(1)))
           } else {
             helper(values.length, if (state.subselected < 0) label else values(state.subselected), 
-              str => setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(if (state.subselected < 0) elem.copy(label = str) else elem.copy(values = values.patch(state.subselected, Seq(str), 1))), 1))))
+              str => updateElement(state.selected, if (state.subselected < 0) elem.copy(label = str) else elem.copy(values = values.patch(state.subselected, Seq(str), 1))))
           }
         case elem@Text(px, py, label) => 
-          helper(0, label, str => setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(elem.copy(msg = str)), 1))))
+          helper(0, label, str => updateElement(state.selected, elem.copy(msg = str)))
         case _ =>
       }
     }
@@ -284,35 +284,42 @@ object Modes extends Enumeration {
         val dy = y - oy
         state.svgElements(state.selected) match {
           case elem@ReferenceBox(px, py, label) => 
-            setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(elem.copy(px = elem.px + dx, py = elem.py + dy)), 1), downLoc = Some(x -> y), curLoc = Some(x -> y)))
+            updateElement(state.selected, elem.copy(px = elem.px + dx, py = elem.py + dy))
+            setState(state.copy(downLoc = Some(x -> y), curLoc = Some(x -> y)))
           case elem@ValueBox(px, py, value, label) =>
-            setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(elem.copy(px = elem.px + dx, py = elem.py + dy)), 1), downLoc = Some(x -> y), curLoc = Some(x -> y)))
+            updateElement(state.selected, elem.copy(px = elem.px + dx, py = elem.py + dy))
+            setState(state.copy(downLoc = Some(x -> y), curLoc = Some(x -> y)))
           case elem@DoubleBox(px, py, value, label) => 
-            setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(elem.copy(px = elem.px + dx, py = elem.py + dy)), 1), downLoc = Some(x -> y), curLoc = Some(x -> y)))
+            updateElement(state.selected, elem.copy(px = elem.px + dx, py = elem.py + dy))
+            setState(state.copy(downLoc = Some(x -> y), curLoc = Some(x -> y)))
           case elem@TripleBox(px, py, value, label) => 
-            setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(elem.copy(px = elem.px + dx, py = elem.py + dy)), 1), downLoc = Some(x -> y), curLoc = Some(x -> y)))
+            updateElement(state.selected, elem.copy(px = elem.px + dx, py = elem.py + dy))
+            setState(state.copy(downLoc = Some(x -> y), curLoc = Some(x -> y)))
           case elem@ArrayOfBoxes(px, py, values, label) => 
-            setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(elem.copy(px = elem.px + dx, py = elem.py + dy)), 1), downLoc = Some(x -> y), curLoc = Some(x -> y)))
+            updateElement(state.selected, elem.copy(px = elem.px + dx, py = elem.py + dy))
+            setState(state.copy(downLoc = Some(x -> y), curLoc = Some(x -> y)))
           case Connector(e1, sub1, e2) =>
             val closest = findEndConnection(x, y, e1)
-            closest.foreach { newE2 => setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(Connector(e1, sub1, newE2)), 1)))}
+            closest.foreach { newE2 => updateElement(state.selected, Connector(e1, sub1, newE2)) }
           case Curve(pnts) =>
-            setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(Curve(pnts.map(p => (p._1+dx, p._2+dy)))), 1), downLoc = Some(x -> y), curLoc = Some(x -> y)))
+            updateElement(state.selected, Curve(pnts.map(p => (p._1+dx, p._2+dy))))
+            setState(state.copy(downLoc = Some(x -> y), curLoc = Some(x -> y)))
           case elem@Text(px, py, msg) => 
-            setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(elem.copy(px = elem.px + dx, py = elem.py + dy)), 1), downLoc = Some(x -> y), curLoc = Some(x -> y)))
+            updateElement(state.selected, elem.copy(px = elem.px + dx, py = elem.py + dy))
+            setState(state.copy(downLoc = Some(x -> y), curLoc = Some(x -> y)))
           case _ =>
         }
       } else if (state.mode == Modes.Connector && state.selected >=0 && state.selected < state.svgElements.length) {
         state.svgElements(state.selected) match {
           case Connector(e1, sub1, e2) =>
             val closest = findEndConnection(x, y, e1)
-            closest.foreach { newE2 => setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(Connector(e1, sub1, newE2)), 1)))}
+            closest.foreach { newE2 => updateElement(state.selected, Connector(e1, sub1, newE2))}
           case _ =>
         }
       } else if (state.mode == Modes.Curve && state.selected >=0 && state.selected < state.svgElements.length) {
         state.svgElements(state.selected) match {
           case Curve(pnts) =>
-            setState(state.copy(svgElements = state.svgElements.patch(state.selected, Seq(Curve((x, y) +: pnts)), 1)))
+            updateElement(state.selected, Curve((x, y) +: pnts))
           case _ =>
         }
       }
@@ -351,25 +358,34 @@ object Modes extends Enumeration {
     }
   }
 
+  def updateElement(index: Int, newElem: DrawAnswerElement): Unit = {
+    val newElems = state.svgElements.patch(state.selected, Seq(newElem), 1)
+    props.setElements(newElems)
+  }
+
   def addElement(elem: DrawAnswerElement): Seq[DrawAnswerElement] = {
     val (added, offset) = elem match {
       case Connector(_, _, _) => (state.svgElements :+ elem, 0)
       case _ => (elem +: state.svgElements, 1)
     }
-    added.map { e => e match {
+    val newElems = added.map { e => e match {
       case Connector(e1, sub1, e2) => Connector(if (e1 >= 0) e1 + offset else e1, sub1, if (e2 >= 0) e2 + offset else e2)
       case _ => e
     } }
+    props.setElements(newElems)
+    newElems
   }
 
   def removeElement(i: Int): Seq[DrawAnswerElement] = {
-    state.svgElements.zipWithIndex.flatMap { case (e, index) => 
+    val newElems = state.svgElements.zipWithIndex.flatMap { case (e, index) => 
       if (i == index) None else e match {
         case Connector(e1, sub1, e2) => 
           if (e1 == i || e2 == i) None else Some(Connector(if (e1 < i) e1 else e1-1, sub1, if (e2 < i) e2 else e2-1))
         case _ => Some(e)
       } 
     }
+    props.setElements(newElems)
+    newElems
   }
 
   def indexForElem(elem: DrawAnswerElement): Int = {
@@ -397,5 +413,11 @@ object Modes extends Enumeration {
       case _: ValueBox | _: DoubleBox | _: TripleBox | _: ArrayOfBoxes => Some(closest._2)
       case _ => None
     }
+  }
+}
+
+object DrawAnswerComponent {
+  override val getDerivedStateFromProps = (nextProps: Props, prevState: State) => {
+    prevState.copy(svgElements = nextProps.editableElements)
   }
 }

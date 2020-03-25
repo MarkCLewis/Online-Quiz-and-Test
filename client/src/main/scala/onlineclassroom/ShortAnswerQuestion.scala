@@ -1,5 +1,6 @@
 package onlineclassroom
 
+import scalajs.js
 import slinky.core.Component
 import slinky.core.facade.ReactElement
 import slinky.core.annotations.react
@@ -17,7 +18,7 @@ import onlineclassroom.ReadsAndWrites._
     val initialElements = props.info.initialElements ++ (if (props.editable) Nil else state.answer.elements)
     val editableElements = if (props.editable) state.answer.elements else Nil
     div (
-      props.info.prompt,
+      span (dangerouslySetInnerHTML := js.Dynamic.literal(__html = props.info.prompt)),
       br(),
       textarea(value := state.answer.text, 
         onChange := (e => if (props.editable) setState(state.copy(answer = state.answer.copy(text = e.target.value)))),
@@ -25,7 +26,9 @@ import onlineclassroom.ReadsAndWrites._
         cols := "100", rows := "8"
       ),
       br(),
-      DrawAnswerComponent(false,props.info.initialElements, props.lastAnswer.map(_.elements).getOrElse(Nil), 800, 400, props.editable, e => { saveElements(e); setState(state.copy(answer = state.answer.copy(elements = e))) }),
+      DrawAnswerComponent(false,props.info.initialElements, state.answer.elements, 800, 400, props.editable, 
+        elems => setState(state.copy(answer = state.answer.copy(elements = elems))),
+        elems => saveElements(elems)),
       br(),
       state.message
     )
@@ -36,7 +39,6 @@ import onlineclassroom.ReadsAndWrites._
   }
 
   def saveElements(elems: Seq[DrawAnswerElement]): Unit = {
-    println(s"Saving elements: $elems")
     mergeAnswer(state.answer.text, elems)
   }
 

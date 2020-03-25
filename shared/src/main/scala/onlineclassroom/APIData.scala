@@ -23,6 +23,11 @@ case class GradeFormulaInfo(id: Int, groupName: String, formula: String)
 case class CourseGradeInformation(assessments: Seq[AssessmentCourseInfo], formulas: Seq[GradeFormulaInfo])
 case class FullInstructorCourseData(students: Seq[FullStudentData], grades: CourseGradeInformation)
 
+case class GradeData(id: Int, answerid: Int, percentCorrect: Double, comments: String)
+case class GradeAnswer(id: Int, userid: Int, courseid: Int, paaid: Int, submitTime: String, answer: ProblemAnswer, gradeData: Option[GradeData])
+case class GradingProblemData(id: Int, spec: ProblemSpec, answers: Seq[GradeAnswer])
+case class AssessmentGradingData(id: Int, name: String, description: String, problems: Seq[GradingProblemData])
+
 case class StudentAssessmentStart(id: Int, userid: Int, aciid: Int, timeStarted: String)
 
 case class AssessmentData(id: Int, name: String, description: String, autoGrade: Int)
@@ -40,8 +45,6 @@ case class WriteExpressionAnswer(code: String) extends ProblemAnswer
 case class DrawingAnswer(elements: Seq[DrawAnswerElement]) extends ProblemAnswer
 case class ManualEntryAnswer(requiredForJson: Int = -1) extends ProblemAnswer
 case class ProblemAnswerError(error: String) extends ProblemAnswer
-
-case class GradeAnswer(id: Int, userid: Int, courseid: Int, paaid: Int, percentCorrect: Option[Double], submitTime: String, answer: ProblemAnswer)
 
 /**
  * The subtypes of ProblemInfo are passed from the server to the client for displaying during an assessment.
