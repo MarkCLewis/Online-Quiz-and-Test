@@ -217,4 +217,16 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
       model.setGradeData(gd).map(newid => Ok(Json.toJson(newid)))
     }
   }
+
+  def updateTimeMultiplier = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[(Int, Int, Double)] { case (userid, courseid, newMult) =>
+      model.updateTimeMultiplier(userid, courseid, newMult).map(num => Ok(Json.toJson(num)))
+    }
+  }
+
+  def getTimeMultipler = AuthenticatedAction { implicit request =>
+    withJsonBody[(Int, Int)] { case (userid, courseid) => 
+      model.getTimeMultipler(userid, courseid).map(mult => Ok(Json.toJson(mult)))
+    }
+  }
 }

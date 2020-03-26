@@ -84,7 +84,6 @@ CREATE TABLE answer (
   details varchar(20000) NOT NULL
 );
 
-ALTER TABLE answer DROP COLUMN percent_correct;
 CREATE TABLE answer_grade (
   id SERIAL PRIMARY KEY,
   answerid int NOT NULL REFERENCES answer(id) ON DELETE CASCADE,

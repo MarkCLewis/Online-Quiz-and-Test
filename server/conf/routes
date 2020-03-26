@@ -31,6 +31,8 @@ POST       /addAnswer                    controllers.Application.addAnswer
 POST       /addStudentToCourse           controllers.Application.addStudentToCourse
 POST       /assessmentGradingData        controllers.Application.assessmentGradingData
 POST       /setGradeData                 controllers.Application.setGradeData
+POST       /updateTimeMultiplier         controllers.Application.updateTimeMultiplier
+POST       /getTimeMultipler             controllers.Application.getTimeMultipler
 
 # Prefix must match `play.assets.urlPrefix`
 GET        /assets/*file                 controllers.Assets.at(file)

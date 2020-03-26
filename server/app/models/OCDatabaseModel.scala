@@ -117,21 +117,26 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
     for(gfi <- formulas; aci <- assessments) yield CourseGradeInformation(aci, gfi)
   }
 
+  def calculateStudentAssessmentPercent(): Future[Double] = {
+    ???
+  }
+
   def studentAssessmentPercent(userid: Int, courseid: Int, assessmentid: Int): Future[Double] = {
     val ungrouped = db.run((for {
       paa <- ProblemAssessmentAssoc
       if paa.assessmentid === assessmentid
-      (answer, grade) <- Answer.joinLeft(AnswerGrade)
+      (answer, grade) <- Answer.joinLeft(AnswerGrade).on(_.id === _.answerid)
       if answer.paaid === paa.id && answer.userid === userid && answer.courseid === courseid
     } yield (paa.id, paa.weight, paa.extraCredit, grade.map(_.percentCorrect))).result)
-    val grouped = ungrouped.map(_.groupBy(t => (t._1, t._2, t._3)).map { case (paaInfo, nums) => paaInfo -> nums.maxBy(_._4.getOrElse(0.0))._4})
-    grouped.map { g =>
-      println(s"Calc percent $userid")
-      val totalWeight: Double = g.map { case ((paaid, weight, ec), percent) => if (ec) 0.0 else weight}.sum
-      val totalPoints = g.map { case ((paaid, weight, ec), percent) => weight * percent.getOrElse(0.0)}.sum
-      println(s"$totalWeight / $totalPoints")
-      if (totalWeight == 0.0) 0.0 else totalPoints / totalWeight
-    }
+    ungrouped.map(_.groupBy(t => (t._1, t._2, t._3))
+      .map { case (paaInfo, nums) => paaInfo -> nums.maxBy(_._4.getOrElse(0.0))._4})
+      .map { g =>
+        println(s"Calc percent $userid with $g")
+        val totalWeight: Double = g.map { case ((paaid, weight, ec), percent) => if (ec) 0.0 else weight}.sum
+        val totalPoints = g.map { case ((paaid, weight, ec), percent) => weight * percent.getOrElse(0.0)}.sum
+        println(s"$totalWeight / $totalPoints")
+        if (totalWeight == 0.0) 0.0 else totalPoints / totalWeight
+      }
   }
 
   def studentGradeData(userid: Int, courseid: Int): Future[FullStudentData] = {
@@ -326,28 +331,6 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
           AssessmentGradingData(assessment.id, assessment.name, assessment.description, problems)
         }.head
     }
-    // db.run( for{
-    //   assessment <- Assessment if assessment.id === assessmentid
-    //   paas <- db.run (ProblemAssessmentAssoc.filter(_.assessmentid === assessmentid).join(Problem).on(_.problemid === _.id).result)
-    //   problems <- Future.sequence(paas.map {case (paa, problem) =>
-    //     for {
-    //       answerRows <- db.run (Answer.filter(a => a.courseid === courseid && a.paaid === paa.id).result)
-    //       answers <- Future.sequence( answerRows.map { ar =>
-    //         for {
-    //           gradeData <- db.run(AnswerGrade.filter(_.answerid === ar.id).result).map(_.headOption)
-    //         } yield {
-    //           GradeAnswer(ar.id, ar.userid, ar.courseid, ar.paaid, ar.submitTime.toString(), 
-    //             Json.fromJson[ProblemAnswer](Json.parse(ar.details)).asOpt.getOrElse(ProblemAnswerError("Info error: " + ar.details)),
-    //               gradeData.map(agr => GradeData(agr.id, agr.answerid, agr.percentCorrect, agr.comments)))
-    //         }
-    //       })
-    //     } yield {
-    //       GradingProblemData(problem.id, Json.fromJson[ProblemSpec](Json.parse(problem.spec)).asOpt.getOrElse(ProblemInfoError("Info error", problem.spec)), answers)
-    //     }
-    //   })
-    // } yield {
-    //   AssessmentGradingData(assessment.id, assessment.name, assessment.description, problems)
-    // }
   }
 
   def setGradeData(gd: GradeData): Future[Int] = {
@@ -357,5 +340,13 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
     } else {
       db.run(AnswerGrade.filter(_.id === gd.id).update(AnswerGradeRow(gd.id, gd.answerid, gd.percentCorrect, gd.comments))).map(cnt => gd.id)
     }
+  }
+
+  def updateTimeMultiplier(userid: Int, courseid: Int, newMult: Double): Future[Int] = {
+    db.run ( UserCourseAssoc.filter(ucaRow => ucaRow.userid === userid && ucaRow.courseid === courseid).map(_.timeMultiplier).update(newMult) )
+  }
+
+  def getTimeMultipler(userid: Int, courseid: Int): Future[Double] = {
+    db.run ( UserCourseAssoc.filter(ucaRow => ucaRow.userid === userid && ucaRow.courseid === courseid).map(_.timeMultiplier).result ).map(_.head)
   }
 }

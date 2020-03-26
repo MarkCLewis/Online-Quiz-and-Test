@@ -71,7 +71,13 @@ object InstructorCourseViewModes extends Enumeration {
                   state.studentData.zipWithIndex.map { case (sd, i) =>
                     tr (key := i.toString, 
                       td (sd.email, className := "outlined"), 
-                      td (input (`type` := "number", value := sd.timeMultiplier.toString, onChange := (e => {}))), 
+                      td (input (`type` := "number", value := sd.timeMultiplier.toString, 
+                        onChange := { e => 
+                          val newMult = if (e.target.value.isEmpty) 0.0 else e.target.value.toDouble
+                          setState(state.copy(studentData = state.studentData.patch(i, Seq(sd.copy(timeMultiplier = newMult)), 1)))
+                        },
+                        onBlur := (e => updateTimeMultiplier(sd.id, props.course.id, sd.timeMultiplier))
+                      )), 
                       groups.zipWithIndex.map { case (g, j) => groupColumns(g).zipWithIndex.map { case (colHead, k) => td (key := (j*100+k).toString, 
                         if (sd.grades.contains(colHead)) sd.grades(colHead) else calcFormula(sd.grades, formulaMap.get(g).getOrElse("")))}})
                   }
@@ -180,5 +186,11 @@ object InstructorCourseViewModes extends Enumeration {
     PostFetch.fetch("/addStudentToCourse", (email, props.course.id),
       (num: Int) => if (num > 0) loadData() else setState(state.copy(message = "Failed to add student.")),
       e => setState(_.copy(message = "Error with Json adding student to course.")))
+  }
+
+  def updateTimeMultiplier(userid: Int, courseid: Int, newMult: Double): Unit = {
+    PostFetch.fetch("/updateTimeMultiplier", (userid, courseid, newMult),
+      (num: Int) => {},
+      e => setState(_.copy(message = "Error with Json updating time multiplier.")))
   }
 }

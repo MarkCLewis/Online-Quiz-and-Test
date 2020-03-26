@@ -22,9 +22,9 @@ object CourseViewMode extends Enumeration {
   
   // TODO: Need FullStudentData for this course both for multiplier and for grades.
   case class State(message: String, mode: CourseViewMode.Value, assessments: Seq[AssessmentCourseInfo], starts: Seq[StudentAssessmentStart],
-    selectedAssessment: Option[AssessmentCourseInfo], serverTime: Date)
+    selectedAssessment: Option[AssessmentCourseInfo], serverTime: Date, multiplier: Double)
 
-  def initialState: State = State("", CourseViewMode.Normal, Nil, Nil, None, new Date)
+  def initialState: State = State("", CourseViewMode.Normal, Nil, Nil, None, new Date, 0.0)
 
   private var shortInterval: Int = 0;
   private var longInterval: Int = 0;
@@ -63,13 +63,13 @@ object CourseViewMode extends Enumeration {
               state.assessments.zipWithIndex.map { case (a, i) =>
                 val start = a.start.getOrElse("None")
                 val end = a.end.getOrElse("None")
-                val limit = a.timeLimit.map(_.toString).getOrElse("None")
+                val limit = a.timeLimit.map(limit => if (state.multiplier != 1.0) s"$limit x ${state.multiplier}" else limit.toString).getOrElse("None")
                 tr ( key := i.toString, 
                   td (a.name, onClick := (e => if (TimeMethods.assessmentViewable(a, state.serverTime)) setState(state.copy(mode = CourseViewMode.TakeAssessment, selectedAssessment = Some(a))))), 
                   td (start),
                   td (end),
                   td (limit),
-                  td (if (TimeMethods.assessmentOpen(a, startMap.get(a.id), state.serverTime)) "Open" else "Closed") 
+                  td (if (TimeMethods.assessmentOpen(a, startMap.get(a.id), state.serverTime, state.multiplier)) "Open" else "Closed") 
                 )
               }
             )
@@ -79,7 +79,7 @@ object CourseViewMode extends Enumeration {
         )
       case CourseViewMode.TakeAssessment =>
         TakeAssessment(props.userData, props.course, state.selectedAssessment.get, state.serverTime, startMap.get(state.selectedAssessment.get.id), 
-          () => setState(state.copy(mode = CourseViewMode.Normal)))
+          () => setState(state.copy(mode = CourseViewMode.Normal)), state.multiplier)
     }
   }
 
@@ -96,6 +96,9 @@ object CourseViewMode extends Enumeration {
     PostFetch.fetch("/getStudentStarts", (props.userData.id, props.course.id),
       (starts: Seq[StudentAssessmentStart]) => setState(state.copy(starts = starts)),
       e => setState(_.copy(message = "Error with JSON response getting starts.")))
+    PostFetch.fetch("/getTimeMultipler", (props.userData.id, props.course.id),
+      (mult: Double) => setState(state.copy(multiplier = mult)),
+      e => setState(_.copy(message = "Error with JSON response getting multiplier.")))
   }
 
   def updateTimer1Second(): Unit = {

@@ -15,7 +15,7 @@ import scala.scalajs.js.Date
 
 @react class TakeAssessment extends Component {
   case class Props(userData: UserData, course: CourseData, aci: AssessmentCourseInfo, initialServerTime: Date, 
-    initialStart: Option[StudentAssessmentStart], exitFunc: () => Unit)
+    initialStart: Option[StudentAssessmentStart], exitFunc: () => Unit, multipler: Double)
   case class State(message: String, start: Option[StudentAssessmentStart], problems: Seq[StudentProblemSpec], serverTime: Date)
 
   def initialState: State = State("", props.initialStart, Nil, props.initialServerTime)
@@ -38,8 +38,8 @@ import scala.scalajs.js.Date
   }
 
   def render: ReactElement = {
-    val open = TimeMethods.assessmentOpen(props.aci, state.start, state.serverTime)
-    val remainingMilis = TimeMethods.timeRemaining(props.aci, state.start, state.serverTime)
+    val open = TimeMethods.assessmentOpen(props.aci, state.start, state.serverTime, props.multipler)
+    val remainingMilis = TimeMethods.timeRemaining(props.aci, state.start, state.serverTime, props.multipler)
     val remainingStr = TimeMethods.millisToHMS(remainingMilis)
     div (
       h2 (props.aci.name),
