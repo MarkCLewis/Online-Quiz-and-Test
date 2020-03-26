@@ -50,7 +50,9 @@ import scala.scalajs.js.Date
         (p.info, p.answer) match {
           case (sai: ShortAnswerInfo, saa: Option[ShortAnswerAnswer]) =>
             div ( key := i.toString, ShortAnswerQuestion(props.userData, props.course, p.paaid, sai, saa, open, 
-              newsaa => setState(state.copy(problems = state.problems.patch(i, Seq(p.copy(answer = Some(newsaa))), 1))) ) )
+              newsaa => setState(state.copy(problems = state.problems.patch(i, Seq(p.copy(answer = Some(newsaa))), 1))) ),
+              hr()
+            )
         }
       },
       button ("Exit", onClick := (e => props.exitFunc()))

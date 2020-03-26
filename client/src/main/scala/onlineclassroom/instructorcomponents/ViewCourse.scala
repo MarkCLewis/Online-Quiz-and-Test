@@ -59,7 +59,9 @@ object InstructorCourseViewModes extends Enumeration {
             println(s"groupColumns: $groupColumns")
             div (
               h2 (s"${props.course.name}-${props.course.semester}-${props.course.section}", button ("Done", onClick := (e => props.exitFunc()))),
-              h3 ("Students"),
+              h3 ("Students and Grades"),
+              "Click a column header to grade that assignment.",
+              br(),
               table (
                 thead (
                   tr ( th ("Email", rowSpan := 2), th ("Time Multiplier", rowSpan := 2), 

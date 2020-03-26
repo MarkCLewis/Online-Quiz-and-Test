@@ -44,7 +44,8 @@ import onlineclassroom.ReadsAndWrites._
                     br(),
                     DrawAnswerComponent(saa.elements.nonEmpty, sai.initialElements, saa.elements, 800, 400, false, elems => {}, elems => {}),
                     br(),
-                    GradingInputComponent(ga.gradeData, (percent, comment) => updateGradeState(percent, comment, ga, agd, pi), gd => updateGradeOnServer(gd, ga, agd, pi))
+                    GradingInputComponent(ga.gradeData, (percent, comment) => updateGradeState(percent, comment, ga, agd, pi), gd => updateGradeOnServer(gd, ga, agd, pi)),
+                    hr()
                   )
                 }
               }

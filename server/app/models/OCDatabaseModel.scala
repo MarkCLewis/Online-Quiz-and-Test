@@ -242,7 +242,6 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
     }.map(_.map(start => StudentAssessmentStart(start.id, start.userid, start.acaid, start.timeStarted.toString)))
   }
 
-// case class StudentProblemSpec(paaid: Int, assessmentid: Int, problemid: Int, weight: Double, extraCredit: Boolean, info: ProblemInfo, answer: Option[ProblemAnswer])
   def getAssessmentProblems(userid: Int, courseid: Int, assessmentid: Int, aciid: Int): Future[Seq[StudentProblemSpec]] = {
     val fInfo = db.run {
       (for {
@@ -264,7 +263,7 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
           val info = Json.fromJson[ProblemSpec](Json.parse(problem.spec)).asOpt.map(_.info).getOrElse(ProblemInfoError("Error", s"Parsing: ${problem.spec}"))
           StudentProblemSpec(paa.id, assessmentid, paa.problemid, paa.weight, paa.extraCredit, info, probAnswer)
         }
-      })
+      }).map(_.sortBy(_.problemid))
     }
   }
 
@@ -328,7 +327,7 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
               }
               GradingProblemData(problem.id, Json.fromJson[ProblemSpec](Json.parse(problem.spec)).asOpt.getOrElse{println(s"info error with: ${problem.spec}"); ProblemSpec(-1, ProblemInfoError("Info error", problem.spec), null)}, answers)
             }.toSeq
-          AssessmentGradingData(assessment.id, assessment.name, assessment.description, problems)
+          AssessmentGradingData(assessment.id, assessment.name, assessment.description, problems.sortBy(_.id))
         }.head
     }
   }
