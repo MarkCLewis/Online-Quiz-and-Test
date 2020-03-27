@@ -49,8 +49,10 @@ import scala.scalajs.js.Date
       state.problems.zipWithIndex.map { case (p, i) =>
         (p.info, p.answer) match {
           case (sai: ShortAnswerInfo, saa: Option[ShortAnswerAnswer]) =>
-            div ( key := i.toString, ShortAnswerQuestion(props.userData, props.course, p.paaid, sai, saa, open, 
-              newsaa => setState(state.copy(problems = state.problems.patch(i, Seq(p.copy(answer = Some(newsaa))), 1))) ),
+            div ( key := i.toString, 
+              h4 (s"Problem ${i+1}"),
+              ShortAnswerQuestion(props.userData, props.course, p.paaid, sai, saa, open, 
+                newsaa => setState(state.copy(problems = state.problems.patch(i, Seq(p.copy(answer = Some(newsaa))), 1))) ),
               hr()
             )
         }

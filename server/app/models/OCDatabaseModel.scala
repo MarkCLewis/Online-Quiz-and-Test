@@ -242,6 +242,11 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
     }.map(_.map(start => StudentAssessmentStart(start.id, start.userid, start.acaid, start.timeStarted.toString)))
   }
 
+  def getAssessmentStarts(aciid: Int): Future[Seq[StudentAssessmentStart]] = {
+    db.run (AssessmentStartTime.filter(_.acaid === aciid).result)
+      .map(_.map(astRow => StudentAssessmentStart(astRow.id, astRow.userid, astRow.acaid, astRow.timeStarted.toString)))
+  }
+
   def getAssessmentProblems(userid: Int, courseid: Int, assessmentid: Int, aciid: Int): Future[Seq[StudentProblemSpec]] = {
     val fInfo = db.run {
       (for {

@@ -26,7 +26,7 @@ import onlineclassroom._
 import onlineclassroom.ReadsAndWrites._
 
 object InstructorCourseViewModes extends Enumeration {
-  val Normal, Grading = Value
+  val Normal, Grading, Monitoring = Value
 }
 
 @react class ViewCourse extends Component {
@@ -72,7 +72,7 @@ object InstructorCourseViewModes extends Enumeration {
                 tbody (
                   state.studentData.zipWithIndex.map { case (sd, i) =>
                     tr (key := i.toString, 
-                      td (sd.email, className := "outlined"), 
+                      td (sd.email), 
                       td (input (`type` := "number", value := sd.timeMultiplier.toString, 
                         onChange := { e => 
                           val newMult = if (e.target.value.isEmpty) 0.0 else e.target.value.toDouble
@@ -103,44 +103,45 @@ object InstructorCourseViewModes extends Enumeration {
               ),
               br(),
               "Times in yyyy-[m]m-[d]d hh:mm:ss[.f...] format",
-              table ( className := "outlined",
+              table (
                 thead (
                   tr (th ("Name"), th("Description"), th("Points"), th("Group"), th("Autograde"), th("Start"), th("End"), th("Minutes"))            
                 ),
-                tbody ( className := "outlined",
+                tbody (
                   state.gradeData.map { gd =>
-                    gd.assessments.zipWithIndex.map { case (a, i) => tr ( key := i.toString,
-                      td (a.name), td (a.description), 
-                      td ( input (`type` := "number", value := a.points.toString, 
+                    gd.assessments.zipWithIndex.map { case (aci, i) => tr ( key := i.toString,
+                      td (aci.name, onClick := (e => setState(state.copy(mode = InstructorCourseViewModes.Monitoring, selectedAssessment = Some(aci))))), 
+                      td (aci.description), 
+                      td ( input (`type` := "number", value := aci.points.toString, 
                         onChange := (e => setState(state.copy(gradeData = Some(state.gradeData.get.copy(assessments = 
-                          state.gradeData.get.assessments.patch(i, Seq(a.copy(points = if (e.target.value.isEmpty()) 0 else e.target.value.toInt)), 1)))))),
-                        onBlur := (e => updateAssessmentCourseAssoc(a, i))
+                          state.gradeData.get.assessments.patch(i, Seq(aci.copy(points = if (e.target.value.isEmpty()) 0 else e.target.value.toInt)), 1)))))),
+                        onBlur := (e => updateAssessmentCourseAssoc(aci, i))
                       )), 
-                      td (input (`type` := "text", value := a.group,
+                      td (input (`type` := "text", value := aci.group,
                         onChange := (e => setState(state.copy(gradeData = Some(state.gradeData.get.copy(assessments = 
-                          state.gradeData.get.assessments.patch(i, Seq(a.copy(group = e.target.value)), 1)))))),
-                        onBlur := (e => updateAssessmentCourseAssoc(a, i))
+                          state.gradeData.get.assessments.patch(i, Seq(aci.copy(group = e.target.value)), 1)))))),
+                        onBlur := (e => updateAssessmentCourseAssoc(aci, i))
                       )), 
-                      td ( select ( value := a.autoGrade.toString(),
+                      td ( select ( value := aci.autoGrade.toString(),
                         option (value := "0", AutoGradeOptions.asString(0)),
                         option (value := "1", AutoGradeOptions.asString(1)),
                         option (value := "2", AutoGradeOptions.asString(2)),
-                        onChange := (e => updateAssessmentCourseAssoc(a.copy(autoGrade = e.target.value.toInt), i))
+                        onChange := (e => updateAssessmentCourseAssoc(aci.copy(autoGrade = e.target.value.toInt), i))
                       )),
-                      td ( input (`type` := "text", value := a.start.getOrElse(""),
+                      td ( input (`type` := "text", value := aci.start.getOrElse(""),
                         onChange := (e => setState(state.copy(gradeData = Some(state.gradeData.get.copy(assessments = 
-                          state.gradeData.get.assessments.patch(i, Seq(a.copy(start = Some(e.target.value))), 1)))))),
-                        onBlur := (e => updateAssessmentCourseAssoc(a.copy(start = Some(e.target.value)), i))
+                          state.gradeData.get.assessments.patch(i, Seq(aci.copy(start = Some(e.target.value))), 1)))))),
+                        onBlur := (e => updateAssessmentCourseAssoc(aci.copy(start = Some(e.target.value)), i))
                       )),
-                      td ( input (`type` := "text", value := a.end.getOrElse(""),
+                      td ( input (`type` := "text", value := aci.end.getOrElse(""),
                         onChange := (e => setState(state.copy(gradeData = Some(state.gradeData.get.copy(assessments = 
-                          state.gradeData.get.assessments.patch(i, Seq(a.copy(end = Some(e.target.value))), 1)))))),
-                        onBlur := (e => updateAssessmentCourseAssoc(a.copy(end = Some(e.target.value)), i))
+                          state.gradeData.get.assessments.patch(i, Seq(aci.copy(end = Some(e.target.value))), 1)))))),
+                        onBlur := (e => updateAssessmentCourseAssoc(aci.copy(end = Some(e.target.value)), i))
                       )), 
-                      td ( input (`type` := "text", value := a.timeLimit.map(_.toString).getOrElse(""), 
+                      td ( input (`type` := "text", value := aci.timeLimit.map(_.toString).getOrElse(""), 
                         onChange := (e => setState(state.copy(gradeData = Some(state.gradeData.get.copy(assessments = 
-                          state.gradeData.get.assessments.patch(i, Seq(a.copy(timeLimit = try { Some(e.target.value.toInt) } catch { case e: NumberFormatException => None })), 1)))))), 
-                        onBlur := (e => updateAssessmentCourseAssoc(a, i))
+                          state.gradeData.get.assessments.patch(i, Seq(aci.copy(timeLimit = try { Some(e.target.value.toInt) } catch { case e: NumberFormatException => None })), 1)))))), 
+                        onBlur := (e => updateAssessmentCourseAssoc(aci, i))
                       ))
                     ) }: ReactElement
                   }.getOrElse(Seq(tr (): ReactElement))
@@ -151,6 +152,8 @@ object InstructorCourseViewModes extends Enumeration {
             )
           case InstructorCourseViewModes.Grading =>
             GradeAssessment(props.userData, props.course, state.selectedAssessment.get, () => setState(state.copy(mode = InstructorCourseViewModes.Normal)))
+          case InstructorCourseViewModes.Monitoring =>
+            MonitorAssessmentComponent(props.userData, props.course, state.selectedAssessment.get, state.studentData, () => setState(state.copy(mode = InstructorCourseViewModes.Normal)))
         }
     }
   }

@@ -13,7 +13,7 @@ case class NewCourseData(name:String, semester:String, section:Int, studentData:
 
 case class CourseData(id: Int, name: String, semester: String, section: Int)
 
-case class UserData(username: String, id: Int, sessionUID: Int, instructor: Boolean)
+case class UserData(username: String, id: Int, instructor: Boolean)
 case class PasswordChangeData(userid: Int, oldPassword: String, newPassword: String)
 case class NewUserData(username: String, password: String, instructor: Boolean)
 

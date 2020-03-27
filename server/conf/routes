@@ -24,6 +24,7 @@ POST       /saveAssessmentCourseAssoc    controllers.Application.saveAssessmentC
 POST       /getServerTime                controllers.Application.getServerTime
 POST       /getCourseAssessments         controllers.Application.getCourseAssessments
 POST       /getStudentStarts             controllers.Application.getStudentStarts
+POST       /getAssessmentStarts          controllers.Application.getAssessmentStarts
 POST       /getAssessmentProblems        controllers.Application.getAssessmentProblems
 POST       /startAssessment              controllers.Application.startAssessment
 POST       /mergeAnswer                  controllers.Application.mergeAnswer

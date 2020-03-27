@@ -23,6 +23,7 @@ trait OCModel {
   def saveAssessmentCourseAssoc(aci: AssessmentCourseInfo): Future[Int]
   def getCourseAssessments(courseid: Int): Future[Seq[AssessmentCourseInfo]]
   def getStudentStarts(userid: Int, courseid: Int): Future[Seq[StudentAssessmentStart]]
+  def getAssessmentStarts(aciid: Int): Future[Seq[StudentAssessmentStart]]
   def getAssessmentProblems(userid: Int, courseid: Int, assessmentid: Int, aciid: Int): Future[Seq[StudentProblemSpec]]
   def startAssessment(userid: Int, aciid: Int): Future[StudentAssessmentStart]
   def mergeAnswer(sai: SaveAnswerInfo): Future[Int]

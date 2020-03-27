@@ -60,9 +60,9 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
       model.validateUser(li.username, li.password).flatMap { case ret => 
         ret match {
           case None =>
-            Future(Ok(Json.toJson(UserData(li.username, -1, scala.util.Random.nextInt(), false))))
+            Future(Ok(Json.toJson(UserData(li.username, -1, false))))
           case Some((n, instructor)) =>
-            Future(Ok(Json.toJson(UserData(li.username, n, scala.util.Random.nextInt(), instructor)))
+            Future(Ok(Json.toJson(UserData(li.username, n, instructor)))
               .withSession(request.session + ("username" -> li.username) + ("userid" -> n.toString) + ("instructor" -> instructor.toString)))
         }
       }
@@ -172,6 +172,12 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
   def getStudentStarts = AuthenticatedAction { implicit request =>
     withJsonBody[(Int, Int)] { case (userid, courseid) =>
       model.getStudentStarts(userid, courseid).map(starts => Ok(Json.toJson(starts)))
+    }
+  }
+
+  def getAssessmentStarts = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[Int] { aciid =>
+      model.getAssessmentStarts(aciid).map(starts => Ok(Json.toJson(starts)))
     }
   }
 

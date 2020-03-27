@@ -1,5 +1,6 @@
 package onlineclassroom.instructorcomponents
 
+import scalajs.js
 import org.scalajs.dom
 import slinky.core.Component
 import slinky.core.annotations.react
@@ -27,20 +28,21 @@ import onlineclassroom.ReadsAndWrites._
         case Some(agd) => div (
           div (
             agd.problems.zipWithIndex.map { case (agd, i) =>
-              button ( key := i.toString, s"Problem $i", onClick := (e => setState(state.copy(prob = i))))
+              button ( key := i.toString, s"Problem ${i+1}", onClick := (e => setState(state.copy(prob = i))))
             }
           ),
           div (
             div (
               agd.problems(state.prob).spec.info.name,
               br (),
-              agd.problems(state.prob).spec.info.prompt
+              span (dangerouslySetInnerHTML := js.Dynamic.literal(__html = agd.problems(state.prob).spec.info.prompt)),
+              hr ()
             ),
             div (
               agd.problems(state.prob).answers.zipWithIndex.map { case (ga, pi) =>
                 (agd.problems(state.prob).spec.info, ga.answer) match {
                   case (sai: ShortAnswerInfo, saa: ShortAnswerAnswer) => div ( key := pi.toString(),
-                    pre (saa.text),
+                    textarea (value := saa.text, cols := "100", rows := "8", onChange := (e => {})),
                     br(),
                     DrawAnswerComponent(saa.elements.nonEmpty, sai.initialElements, saa.elements, 800, 400, false, elems => {}, elems => {}),
                     br(),
