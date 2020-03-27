@@ -23,13 +23,24 @@ import onlineclassroom.ReadsAndWrites._
   case class Props(userData: UserData, course: CourseData, aci: AssessmentCourseInfo, studentData: Seq[FullStudentData], exitFunc: () => Unit)
   case class State(message: String, data: Option[AssessmentGradingData], starts: Seq[StudentAssessmentStart])
 
+  private var refreshInterval: Int = 0
+
   def initialState: State = State("", None, Nil)
 
-  override def componentDidMount(): Unit = loadData()
+  override def componentDidMount(): Unit = {
+    loadData()
+    refreshInterval = dom.window.setInterval(() => loadData(), 60000)
+  }
+
+  override def componentWillUnmount(): Unit = {
+    dom.window.clearInterval(refreshInterval)
+  }
+
 
   def render: ReactElement = {
     div (
       button ("Exit", onClick := (e => props.exitFunc())),
+      button ("Refresh Now", onClick := (e => loadData())),
       state.data match {
         case None => "Loading Data"
         case Some(agd) =>
