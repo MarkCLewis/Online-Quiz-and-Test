@@ -37,7 +37,8 @@ CREATE TABLE assessment (
   id SERIAL PRIMARY KEY,
   name varchar(30) NOT NULL,
   description varchar(2000) NOT NULL,
-  auto_grade int NOT NULL
+  auto_grade int NOT NULL,
+  creatorid int NOT NULL REFERENCES users(id) ON DELETE CASCADE
 );
 
 /*
@@ -61,7 +62,8 @@ CREATE TABLE assessment_course_assoc (
 
 CREATE TABLE problem (
   id SERIAL PRIMARY KEY,
-  spec varchar(20000) NOT NULL
+  spec varchar(20000) NOT NULL,
+  creatorid int NOT NULL REFERENCES users(id) ON DELETE CASCADE
 );
 
 /*

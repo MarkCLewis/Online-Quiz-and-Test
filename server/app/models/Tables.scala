@@ -96,18 +96,19 @@ trait Tables {
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param name Database column name SqlType(varchar), Length(30,true)
    *  @param description Database column description SqlType(varchar), Length(2000,true)
-   *  @param autoGrade Database column auto_grade SqlType(int4) */
-  case class AssessmentRow(id: Int, name: String, description: String, autoGrade: Int)
+   *  @param autoGrade Database column auto_grade SqlType(int4)
+   *  @param creatorid Database column creatorid SqlType(int4), Default(27) */
+  case class AssessmentRow(id: Int, name: String, description: String, autoGrade: Int, creatorid: Int = 27)
   /** GetResult implicit for fetching AssessmentRow objects using plain SQL queries */
   implicit def GetResultAssessmentRow(implicit e0: GR[Int], e1: GR[String]): GR[AssessmentRow] = GR{
     prs => import prs._
-    AssessmentRow.tupled((<<[Int], <<[String], <<[String], <<[Int]))
+    AssessmentRow.tupled((<<[Int], <<[String], <<[String], <<[Int], <<[Int]))
   }
   /** Table description of table assessment. Objects of this class serve as prototypes for rows in queries. */
   class Assessment(_tableTag: Tag) extends profile.api.Table[AssessmentRow](_tableTag, "assessment") {
-    def * = (id, name, description, autoGrade) <> (AssessmentRow.tupled, AssessmentRow.unapply)
+    def * = (id, name, description, autoGrade, creatorid) <> (AssessmentRow.tupled, AssessmentRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = ((Rep.Some(id), Rep.Some(name), Rep.Some(description), Rep.Some(autoGrade))).shaped.<>({r=>import r._; _1.map(_=> AssessmentRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = ((Rep.Some(id), Rep.Some(name), Rep.Some(description), Rep.Some(autoGrade), Rep.Some(creatorid))).shaped.<>({r=>import r._; _1.map(_=> AssessmentRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -117,6 +118,11 @@ trait Tables {
     val description: Rep[String] = column[String]("description", O.Length(2000,varying=true))
     /** Database column auto_grade SqlType(int4) */
     val autoGrade: Rep[Int] = column[Int]("auto_grade")
+    /** Database column creatorid SqlType(int4), Default(27) */
+    val creatorid: Rep[Int] = column[Int]("creatorid", O.Default(27))
+
+    /** Foreign key referencing Users (database name assessment_creatorid_fkey) */
+    lazy val usersFk = foreignKey("assessment_creatorid_fkey", creatorid, Users)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.Cascade)
   }
   /** Collection-like TableQuery object for table Assessment */
   lazy val Assessment = new TableQuery(tag => new Assessment(tag))
@@ -267,23 +273,29 @@ trait Tables {
 
   /** Entity class storing rows of table Problem
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
-   *  @param spec Database column spec SqlType(varchar), Length(20000,true) */
-  case class ProblemRow(id: Int, spec: String)
+   *  @param spec Database column spec SqlType(varchar), Length(20000,true)
+   *  @param creatorid Database column creatorid SqlType(int4), Default(27) */
+  case class ProblemRow(id: Int, spec: String, creatorid: Int = 27)
   /** GetResult implicit for fetching ProblemRow objects using plain SQL queries */
   implicit def GetResultProblemRow(implicit e0: GR[Int], e1: GR[String]): GR[ProblemRow] = GR{
     prs => import prs._
-    ProblemRow.tupled((<<[Int], <<[String]))
+    ProblemRow.tupled((<<[Int], <<[String], <<[Int]))
   }
   /** Table description of table problem. Objects of this class serve as prototypes for rows in queries. */
   class Problem(_tableTag: Tag) extends profile.api.Table[ProblemRow](_tableTag, "problem") {
-    def * = (id, spec) <> (ProblemRow.tupled, ProblemRow.unapply)
+    def * = (id, spec, creatorid) <> (ProblemRow.tupled, ProblemRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = ((Rep.Some(id), Rep.Some(spec))).shaped.<>({r=>import r._; _1.map(_=> ProblemRow.tupled((_1.get, _2.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = ((Rep.Some(id), Rep.Some(spec), Rep.Some(creatorid))).shaped.<>({r=>import r._; _1.map(_=> ProblemRow.tupled((_1.get, _2.get, _3.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
     /** Database column spec SqlType(varchar), Length(20000,true) */
     val spec: Rep[String] = column[String]("spec", O.Length(20000,varying=true))
+    /** Database column creatorid SqlType(int4), Default(27) */
+    val creatorid: Rep[Int] = column[Int]("creatorid", O.Default(27))
+
+    /** Foreign key referencing Users (database name problem_creatorid_fkey) */
+    lazy val usersFk = foreignKey("problem_creatorid_fkey", creatorid, Users)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.Cascade)
   }
   /** Collection-like TableQuery object for table Problem */
   lazy val Problem = new TableQuery(tag => new Problem(tag))

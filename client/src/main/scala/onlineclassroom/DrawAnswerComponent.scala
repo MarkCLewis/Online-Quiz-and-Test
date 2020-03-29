@@ -71,9 +71,12 @@ object Modes extends Enumeration {
         }
       )
     } else {
-      div {
+      {
         import slinky.web.html._
-        button ("Show Drawing", onClick := (e => setState(state.copy(visible = true))))
+        div (
+          if (state.svgElements.nonEmpty) "Has elements." else "No elements.",
+          button ("Show Drawing", onClick := (e => setState(state.copy(visible = true))))
+        )
       }
     }    
   }

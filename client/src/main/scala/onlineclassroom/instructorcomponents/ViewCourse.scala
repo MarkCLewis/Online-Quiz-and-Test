@@ -66,7 +66,7 @@ object InstructorCourseViewModes extends Enumeration {
                     th (key := (i*100+j).toString, colHead, onClick := (e => setState(state.copy(mode = InstructorCourseViewModes.Grading, selectedAssessment = aciByName.get(colHead)))))}})
                 ),
                 tbody (
-                  state.studentData.zipWithIndex.map { case (sd, i) =>
+                  state.studentData.sortBy(_.email.drop(1)).zipWithIndex.map { case (sd, i) =>
                     tr (key := i.toString, 
                       td (sd.email), 
                       td (input (`type` := "number", value := sd.timeMultiplier.toString, 
