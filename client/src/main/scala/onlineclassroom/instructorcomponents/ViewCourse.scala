@@ -50,13 +50,9 @@ object InstructorCourseViewModes extends Enumeration {
             val adMap = props.allAssessments.map(ad => ad.id -> ad).toMap
             val aciByName = gd.assessments.map(aci => aci.name -> aci).toMap
             val groupedAssessments = gd.assessments.groupBy(_.group)
-            println(s"groupedAssessments: $groupedAssessments")
             val groups = groupedAssessments.keys.toSeq.sortWith((g1, g2) => if (g1.isEmpty || g2.isEmpty) g1 > g2 else g1 < g2)
-            println(s"groups: $groups")
             val formulaMap = gd.formulas.map(f => f.groupName -> f.formula).toMap
-            println(s"formulaMap: $formulaMap")
             val groupColumns = groupedAssessments.map { case (group, saci) => group -> (saci.map(_.name).sorted ++ (if (formulaMap.contains(group)) Seq("Total") else Nil))}
-            println(s"groupColumns: $groupColumns")
             div (
               h2 (s"${props.course.name}-${props.course.semester}-${props.course.section}", button ("Done", onClick := (e => props.exitFunc()))),
               h3 ("Students and Grades"),
@@ -81,7 +77,7 @@ object InstructorCourseViewModes extends Enumeration {
                         onBlur := (e => updateTimeMultiplier(sd.id, props.course.id, sd.timeMultiplier))
                       )), 
                       groups.zipWithIndex.map { case (g, j) => groupColumns(g).zipWithIndex.map { case (colHead, k) => td (key := (j*100+k).toString, 
-                        if (sd.grades.contains(colHead)) sd.grades(colHead) else calcFormula(sd.grades, formulaMap.get(g).getOrElse("")))}})
+                        if (sd.grades.contains(colHead)) sd.grades(colHead) else Formulas.calcFormula(sd.grades, formulaMap.get(g).getOrElse("")))}})
                   }
                 )
               ),
@@ -164,10 +160,6 @@ object InstructorCourseViewModes extends Enumeration {
     PostFetch.fetch("/getInstructorCourseData", props.course.id,
       (ficd: FullInstructorCourseData) => setState(state.copy(studentData = ficd.students, gradeData = Some(ficd.grades))),
       e => { println(e); setState(state.copy(message = "Error with JSON loading data."))})
-  }
-
-  def calcFormula(grades: Map[String, Double], formula: String): Double = {
-    0.0 // TODO: make this work.
   }
 
   def updateAssessmentCourseAssoc(aciUnclean: AssessmentCourseInfo, index: Int): Unit = {

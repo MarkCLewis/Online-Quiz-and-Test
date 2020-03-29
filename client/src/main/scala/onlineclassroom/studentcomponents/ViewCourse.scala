@@ -14,7 +14,7 @@ import onlineclassroom.ReadsAndWrites._
 import scala.scalajs.js.Date
 
 object CourseViewMode extends Enumeration {
-  val Normal, TakeAssessment = Value
+  val Normal, TakeAssessment, ViewAssessment = Value
 }
 
 @react class ViewCourse extends Component {
@@ -22,9 +22,10 @@ object CourseViewMode extends Enumeration {
   
   // TODO: Need FullStudentData for this course both for multiplier and for grades.
   case class State(message: String, mode: CourseViewMode.Value, assessments: Seq[AssessmentCourseInfo], starts: Seq[StudentAssessmentStart],
-    selectedAssessment: Option[AssessmentCourseInfo], serverTime: Date, multiplier: Double)
+    studentData: Option[FullStudentData], formulas: Seq[GradeFormulaInfo], selectedAssessment: Option[AssessmentCourseInfo], 
+    serverTime: Date, multiplier: Double)
 
-  def initialState: State = State("", CourseViewMode.Normal, Nil, Nil, None, new Date, 0.0)
+  def initialState: State = State("", CourseViewMode.Normal, Nil, Nil, None, Nil, None, new Date, 0.0)
 
   private var shortInterval: Int = 0;
   private var longInterval: Int = 0;
@@ -74,12 +75,44 @@ object CourseViewMode extends Enumeration {
               }
             )
           ),
+          h3 ("Grades"),
+          "Click an assignment name to see individual problems and comments.",
+          table (
+            thead ( tr (th ("Name"), th ("Group"), th ("Grade"))),
+            tbody {
+              state.studentData.map { fsd =>
+                if (state.assessments.nonEmpty) {
+                  val aciByName = state.assessments.map(aci => aci.name -> aci).toMap
+                  println(s"aciByName = $aciByName")
+                  val groupedAssessments = state.assessments.groupBy(_.group)
+                  println(s"groupedAssessments = $groupedAssessments")
+                  val groups = groupedAssessments.keys.toSeq.distinct.sortWith((g1, g2) => if (g1.isEmpty || g2.isEmpty) g1 > g2 else g1 < g2)
+                  println(s"groups = $groups")
+                  val formulaMap = state.formulas.map(f => f.groupName -> f.formula).toMap
+                  println(s"formulaMap = $formulaMap")
+                  val groupRows = groupedAssessments.map { case (group, saci) => group -> (saci.map(_.name).sorted ++ (if (formulaMap.contains(group)) Seq("Total") else Nil))}
+                  println(s"groupedRows = $groupRows")
+                  val rows: Seq[ReactElement] = groups.zipWithIndex.flatMap { case (g, j) => 
+                    groupRows(g).zipWithIndex.map { case (rowHead, k) => 
+                      tr (key := (j*100+k).toString, 
+                        td (rowHead, onClick := (e => if (aciByName.contains(rowHead)) setState(state.copy(mode = CourseViewMode.ViewAssessment, selectedAssessment = aciByName.get(rowHead))))),
+                        td (g),
+                        td (if (fsd.grades.contains(rowHead)) fsd.grades(rowHead) else Formulas.calcFormula(fsd.grades, formulaMap.get(g).getOrElse(""))))
+                    }
+                  }
+                  rows
+                } else Seq(div ():ReactElement)
+              }
+            }
+          ),
           button ("Exit", onClick := (e => props.exitFunc())),
           state.message
         )
       case CourseViewMode.TakeAssessment =>
         TakeAssessment(props.userData, props.course, state.selectedAssessment.get, state.serverTime, startMap.get(state.selectedAssessment.get.id), 
           () => setState(state.copy(mode = CourseViewMode.Normal)), state.multiplier)
+      case CourseViewMode.ViewAssessment =>
+        ViewAssessment(props.userData, props.course, state.selectedAssessment.get, () => setState(state.copy(mode = CourseViewMode.Normal)))
     }
   }
 
@@ -99,6 +132,12 @@ object CourseViewMode extends Enumeration {
     PostFetch.fetch("/getTimeMultipler", (props.userData.id, props.course.id),
       (mult: Double) => setState(state.copy(multiplier = mult)),
       e => setState(_.copy(message = "Error with JSON response getting multiplier.")))
+    PostFetch.fetch("/getFullStudentData", (props.userData.id, props.course.id),
+      (fsd: FullStudentData) => setState(state.copy(studentData = Some(fsd))),
+      e => setState(_.copy(message = "Error with JSON response getting full student data.")))
+    PostFetch.fetch("/getFormulas", props.course.id,
+      (gfis: Seq[GradeFormulaInfo]) => setState(state.copy(formulas = gfis)),
+      e => setState(_.copy(message = "Error with JSON response getting Formulas.")))
   }
 
   def updateTimer1Second(): Unit = {

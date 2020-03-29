@@ -18,9 +18,10 @@ import onlineclassroom.ReadsAndWrites._
     val initialElements = props.info.initialElements ++ (if (props.editable) Nil else state.answer.elements)
     val editableElements = if (props.editable) state.answer.elements else Nil
     div (
-      span (dangerouslySetInnerHTML := js.Dynamic.literal(__html = props.info.prompt)),
+      h4 (props.info.name),
+      div (dangerouslySetInnerHTML := js.Dynamic.literal(__html = props.info.prompt)),
       br(),
-      textarea(value := state.answer.text, 
+      textarea(value := state.answer.text, disabled := !props.editable,
         onChange := (e => if (props.editable) setState(state.copy(answer = state.answer.copy(text = e.target.value)))),
         onBlur := (e => saveText(e.target.value)),
         cols := "100", rows := "8"
@@ -43,8 +44,10 @@ import onlineclassroom.ReadsAndWrites._
   }
 
   def mergeAnswer(text: String, elems: Seq[DrawAnswerElement]): Unit = {
-    PostFetch.fetch("/mergeAnswer", SaveAnswerInfo(state.answerid.getOrElse(-1), props.user.id, props.course.id, props.paaid, state.answer.copy(text = text, elements = elems)),
-      (answerid: Int) => setState(state.copy(answerid = Some(answerid))),
-      e => setState(_.copy(message = "Error with JSON response merging answers.")))
+    if (props.editable) {
+      PostFetch.fetch("/mergeAnswer", SaveAnswerInfo(state.answerid.getOrElse(-1), props.user.id, props.course.id, props.paaid, state.answer.copy(text = text, elements = elems)),
+        (answerid: Int) => setState(state.copy(answerid = Some(answerid))),
+        e => setState(_.copy(message = "Error with JSON response merging answers.")))
+    }
   }
 }

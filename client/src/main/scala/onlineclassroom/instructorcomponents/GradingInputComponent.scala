@@ -19,7 +19,6 @@ import onlineclassroom.ReadsAndWrites._
   def initialState: State = State(props.gd)
 
   def render: ReactElement = {
-    println(state.gd)
     div (
       "Percent Correct:",
       input (`type` := "number", value := state.gd.map(_.percentCorrect.toString).getOrElse(""), 
@@ -33,9 +32,9 @@ import onlineclassroom.ReadsAndWrites._
       "Comment:",
       textarea (
         value := state.gd.map(_.comments).getOrElse(""),
+        cols := "80",
         onChange := { e => 
           val newComment = e.target.value
-          println("Updating comment to " + newComment)
           props.updateGradeState(state.gd.map(_.percentCorrect).getOrElse(0), newComment)
         },
         onBlur := (e => props.updateGradeOnServer(state.gd))

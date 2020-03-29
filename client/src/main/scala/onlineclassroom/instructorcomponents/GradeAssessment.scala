@@ -52,6 +52,11 @@ import onlineclassroom.ReadsAndWrites._
                 }
               }
             )
+          ),
+          div (
+            agd.problems.zipWithIndex.map { case (agd, i) =>
+              button ( key := i.toString, s"Problem ${i+1}", onClick := (e => setState(state.copy(prob = i))))
+            }
           )
         )
       },
@@ -69,11 +74,8 @@ import onlineclassroom.ReadsAndWrites._
 
   def updateGradeState(percent: Double, comment: String, ga: GradeAnswer, agd: AssessmentGradingData, pi: Int): Unit = {
     val newGA = ga.copy(gradeData = ga.gradeData.map(_.copy(percentCorrect = percent, comments = comment)).orElse(Some(GradeData(-1, ga.id, percent, comment))))
-    println(s"newGA = $newGA")
     val newAnswers: Seq[GradeAnswer] = agd.problems(state.prob).answers.patch(pi, Seq(newGA), 1)
-    println(s"newAnswers = $newAnswers")
     val newState = state.copy(gradingData = Some(agd.copy(problems = agd.problems.patch(state.prob, Seq(agd.problems(state.prob).copy(answers = newAnswers)), 1))))
-    println(s"newState = $newState")
     setState(newState)
   }
 

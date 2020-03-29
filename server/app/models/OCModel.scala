@@ -33,4 +33,6 @@ trait OCModel {
   def setGradeData(gd: GradeData): Future[Int]
   def updateTimeMultiplier(userid: Int, courseid: Int, newMult: Double): Future[Int]
   def getTimeMultipler(userid: Int, courseid: Int): Future[Double]
+  def getFormulas(courseid: Int): Future[Seq[GradeFormulaInfo]]
+  def studentAssessmentGradingData(userid: Int, courseid: Int, assessmentid: Int): Future[AssessmentGradingData]
 }

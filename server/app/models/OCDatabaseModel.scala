@@ -353,4 +353,36 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
   def getTimeMultipler(userid: Int, courseid: Int): Future[Double] = {
     db.run ( UserCourseAssoc.filter(ucaRow => ucaRow.userid === userid && ucaRow.courseid === courseid).map(_.timeMultiplier).result ).map(_.head)
   }
+
+  def getFormulas(courseid: Int): Future[Seq[GradeFormulaInfo]] = {
+    db.run((for {
+      f <- GradeFormula
+      if f.courseid === courseid
+    } yield f).result).map(formulas => formulas.map(f => GradeFormulaInfo(f.id, f.gradeGroup, f.formula)))
+  }
+
+  def studentAssessmentGradingData(userid: Int, courseid: Int, assessmentid: Int): Future[AssessmentGradingData] = {    
+    val fullResult = db.run (Assessment.filter(_.id === assessmentid).join(ProblemAssessmentAssoc).on(_.id === _.assessmentid).
+      join(Problem).on(_._2.problemid === _.id).joinLeft(Answer).on((t, ans) => t._1._2.id === ans.paaid && ans.courseid === courseid && ans.userid === userid).
+      joinLeft(AnswerGrade).on((t, agrow) => t._2.map(_.id === agrow.answerid)).result)
+    fullResult.map { seq =>
+      seq.map { case ((((assessment, paa), prob), ans), ag) => (assessment, paa, prob, ans, ag) }
+        .groupBy { case (assessment, paa, prob, ans, ag) => assessment }
+        .map { case (assessment, aData) =>
+          val problems = aData.groupBy(t => (t._2 -> t._3))
+            .map { case ((paa, problem), probData) =>
+              val answers = probData.flatMap { case (assessment, paa, problem, ansRowOpt, agOpt) =>
+                ansRowOpt.map(ar =>
+                  GradeAnswer(ar.id, ar.userid, ar.courseid, ar.paaid, ar.submitTime.toString(), 
+                    Json.fromJson[ProblemAnswer](Json.parse(ar.details)).asOpt.getOrElse(ProblemAnswerError("Info error: " + ar.details)),
+                    agOpt.map(agr => GradeData(agr.id, agr.answerid, agr.percentCorrect, agr.comments)))
+                )
+              }
+              GradingProblemData(problem.id, Json.fromJson[ProblemSpec](Json.parse(problem.spec)).asOpt.getOrElse{println(s"info error with: ${problem.spec}"); ProblemSpec(-1, ProblemInfoError("Info error", problem.spec), null)}, answers)
+            }.toSeq
+          AssessmentGradingData(assessment.id, assessment.name, assessment.description, problems.sortBy(_.id))
+        }.head
+    }
+  }
+
 }

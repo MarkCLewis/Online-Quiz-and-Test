@@ -235,4 +235,22 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
       model.getTimeMultipler(userid, courseid).map(mult => Ok(Json.toJson(mult)))
     }
   }
+
+  def getFullStudentData = AuthenticatedAction { implicit request =>
+    withJsonBody[(Int, Int)] { case (userid, courseid) =>
+      model.studentGradeData(userid, courseid).map(fsd => Ok(Json.toJson(fsd)))
+    }
+  }
+
+  def getFormulas = AuthenticatedAction { implicit request =>
+    withJsonBody[Int] { courseid =>
+      model.getFormulas(courseid).map(formulas => Ok(Json.toJson(formulas)))
+    }
+  }
+
+  def studentAssessmentGradingData = AuthenticatedAction { implicit request =>
+    withJsonBody[(Int, Int, Int)] { case (userid, courseid, assessmentid) =>
+      model.studentAssessmentGradingData(userid, courseid, assessmentid).map(agd => Ok(Json.toJson(agd)))
+    }
+  }
 }

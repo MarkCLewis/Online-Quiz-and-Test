@@ -42,22 +42,22 @@ import scala.scalajs.js.Date
     val remainingMilis = TimeMethods.timeRemaining(props.aci, state.start, state.serverTime, props.multipler)
     val remainingStr = TimeMethods.millisToHMS(remainingMilis)
     div (
-      h2 (props.aci.name),
-      h3 (props.aci.description),
+      h1 (props.aci.name),
+      h2 (props.aci.description),
       (if (open) "Time left: " + remainingStr else ""),
       br (),
       state.problems.zipWithIndex.map { case (p, i) =>
         (p.info, p.answer) match {
           case (sai: ShortAnswerInfo, saa: Option[ShortAnswerAnswer]) =>
             div ( key := i.toString, 
-              h4 (s"Problem ${i+1}"),
+              h3 (s"Problem ${i+1}"),
               ShortAnswerQuestion(props.userData, props.course, p.paaid, sai, saa, open, 
                 newsaa => setState(state.copy(problems = state.problems.patch(i, Seq(p.copy(answer = Some(newsaa))), 1))) ),
               hr()
             )
         }
       },
-      button ("Exit", onClick := (e => props.exitFunc()))
+      button ("Done", onClick := (e => props.exitFunc()))
     )
   }
 
