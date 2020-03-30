@@ -56,7 +56,7 @@ object CourseViewMode extends Enumeration {
           state.serverTime.toLocaleString(),
           br(),
           h3 ("Assessments:"),
-          "Click an assessment name to start that assessment.",
+          "Click an assessment name to start that assessment. You can only reach assessments here when they are open. To see assessments after you are done use the grades table below.",
           br(),
           table (
             thead ( tr ( th ("Name"), th ("Start Time"), th ("End Time"), th ("Length [Minutes]"), th ("Status"))),
@@ -66,7 +66,7 @@ object CourseViewMode extends Enumeration {
                 val end = a.end.getOrElse("None")
                 val limit = a.timeLimit.map(limit => if (state.multiplier != 1.0) s"$limit x ${state.multiplier}" else limit.toString).getOrElse("None")
                 tr ( key := i.toString, 
-                  td (a.name, onClick := (e => if (TimeMethods.assessmentViewable(a, state.serverTime)) setState(state.copy(mode = CourseViewMode.TakeAssessment, selectedAssessment = Some(a))))), 
+                  td (a.name, onClick := (e => if (TimeMethods.assessmentOpen(a, startMap.get(a.id), state.serverTime, state.multiplier)) setState(state.copy(mode = CourseViewMode.TakeAssessment, selectedAssessment = Some(a))))), 
                   td (start),
                   td (end),
                   td (limit),

@@ -5,6 +5,7 @@ import slinky.core.annotations.react
 import slinky.core.facade.ReactElement
 import slinky.web.html._
 import org.scalajs.dom.experimental._
+import slinky.core.facade.React
 
 @react class TopComponent extends Component {
   type Props = Unit
@@ -19,7 +20,11 @@ import org.scalajs.dom.experimental._
         br (),
         if (ud.instructor) InstructorPage(ud) else StudentPage(ud)
       )): ReactElement
-    ).getOrElse(LoginPage(doLogin(_)): ReactElement)
+    ).getOrElse(div(
+      LoginPage(ud => doLogin(ud)),
+      br(),
+      DrawTool(800, 600)
+    ):ReactElement)
     ret
   })
 

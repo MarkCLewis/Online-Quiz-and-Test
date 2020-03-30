@@ -18,6 +18,16 @@ import slinky.web.html.selected
 import slinky.web.html.button
 import slinky.web.html.div
 
+@react class DrawTool extends Component {
+  case class Props(width: Double, height: Double)
+  case class State(elems: Seq[DrawAnswerElement])
+
+  def initialState = State(Nil)
+
+  def render(): ReactElement = DrawAnswerComponent(false, Nil, state.elems, props.width, props.height, true, 
+    elems => {println(elems); setState(state.copy(elems = elems))}, elems => {})
+}
+
 object Modes extends Enumeration {
   val Select, RefBox, ValBox, DoubleNode, TripleNode, Array, Connector, Curve, Text, Nothing = this.Value
 }
