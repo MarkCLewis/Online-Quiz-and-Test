@@ -367,13 +367,13 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
   }
 
   def getStudentAnswers(userid: Int, courseid: Int, paa: ProblemAssessmentAssocRow): Future[Seq[GradeAnswer]] = {
-    db.run(Answer.filter(a => a.courseid === courseid && a.paaid === paa.id).result)
+    db.run(Answer.filter(a => a.userid === userid && a.courseid === courseid && a.paaid === paa.id).result)
       .map(_.map(ar => GradeAnswer(ar.id, ar.userid, ar.courseid, ar.paaid, ar.submitTime.toString(), 
           Json.fromJson[ProblemAnswer](Json.parse(ar.details)).asOpt.getOrElse(ProblemAnswerError("Info error: " + ar.details)))))
   }
 
   def getStudentGrades(userid: Int, courseid: Int, paa: ProblemAssessmentAssocRow): Future[Seq[GradeData]] = {
-    db.run(AnswerGrade.filter(ag => ag.courseid === courseid && ag.paaid === paa.id).result)
+    db.run(AnswerGrade.filter(ag => ag.userid === userid && ag.courseid === courseid && ag.paaid === paa.id).result)
       .map(_.map(ag => GradeData(ag.id, ag.userid, ag.courseid, ag.paaid, ag.percentCorrect, ag.comments)))
   }
 

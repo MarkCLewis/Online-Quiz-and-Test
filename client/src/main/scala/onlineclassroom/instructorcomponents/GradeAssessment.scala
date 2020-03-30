@@ -19,7 +19,9 @@ import onlineclassroom.ReadsAndWrites._
 
   def initialState: State = State("", 0, None)
 
-  override def componentDidMount(): Unit = loadData()
+  override def componentDidMount(): Unit = {
+    loadData()
+  }
 
   def render: ReactElement = {
     div (
