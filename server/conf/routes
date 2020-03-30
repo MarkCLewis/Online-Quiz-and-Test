@@ -37,6 +37,7 @@ POST       /getTimeMultipler             controllers.Application.getTimeMultiple
 POST       /getFullStudentData           controllers.Application.getFullStudentData
 POST       /getFormulas                  controllers.Application.getFormulas
 POST       /studentAssessmentGradingData controllers.Application.studentAssessmentGradingData
+POST       /getInstructors               controllers.Application.getInstructors
 
 # Prefix must match `play.assets.urlPrefix`
 GET        /assets/*file                 controllers.Assets.at(file)

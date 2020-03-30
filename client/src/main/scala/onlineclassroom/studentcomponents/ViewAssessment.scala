@@ -38,10 +38,10 @@ import scala.scalajs.js.Date
               },
               br (),
               "Percent: ",
-              gpd.answers.lastOption.flatMap(ga => ga.gradeData.map(_.percentCorrect.toString)),
+              gpd.grades.lastOption.map(_.percentCorrect.toString),
               br (),
               "Comments: ",
-              gpd.answers.lastOption.flatMap(ga => ga.gradeData.map(_.comments)),
+              gpd.grades.lastOption.map(_.comments),
               hr ()
             )
           }

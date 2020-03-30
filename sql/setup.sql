@@ -99,3 +99,22 @@ CREATE TABLE assessment_start_time (
   acaid int NOT NULL REFERENCES assessment_course_assoc(id) ON DELETE CASCADE,
   time_started timestamp NOT NULL
 );
+
+
+/******************************************************/
+
+CREATE TABLE answer_grade_copy (
+  id SERIAL PRIMARY KEY,
+  userid int NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  courseid int NOT NULL REFERENCES course(id) ON DELETE CASCADE,
+  paaid int NOT NULL REFERENCES problem_assessment_assoc(id) ON DELETE CASCADE,
+  percent_correct double precision NOT NULL,
+  comments varchar(200) NOT NULL
+);
+
+INSERT INTO answer_grade_copy SELECT answer_grade.id, answer.userid, answer.courseid, answer.paaid, answer_grade.percent_correct, answer_grade.comments
+  FROM answer, answer_grade WHERE answer.id=answer_grade.answerid;
+ALTER TABLE answer_grade RENAME TO answer_grade_old;
+ALTER TABLE answer_grade_copy RENAME TO answer_grade;
+
+DROP TABLE answer_grade_old;

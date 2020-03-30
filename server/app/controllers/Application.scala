@@ -253,4 +253,10 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
       model.studentAssessmentGradingData(userid, courseid, assessmentid).map(agd => Ok(Json.toJson(agd)))
     }
   }
+
+  def getInstructors = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[Int] { userid =>
+      model.getInstructors().map(instructors => Ok(Json.toJson(instructors)))
+    }
+  }
 }

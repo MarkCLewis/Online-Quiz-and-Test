@@ -13,29 +13,29 @@ import onlineclassroom._
 import onlineclassroom.ReadsAndWrites._
 
 @react class GradingInputComponent extends Component {
-  case class Props(gd: Option[GradeData], updateGradeState: (Double, String) => Unit, updateGradeOnServer: Option[GradeData] => Unit)
-  case class State(gd: Option[GradeData])
+  case class Props(gd: GradeData, updateGradeState: GradeData => Unit, updateGradeOnServer: GradeData => Unit)
+  case class State(gd: GradeData)
 
   def initialState: State = State(props.gd)
 
   def render: ReactElement = {
     div (
       "Percent Correct:",
-      input (`type` := "number", value := state.gd.map(_.percentCorrect.toString).getOrElse(""), 
+      input (`type` := "number", value := state.gd.percentCorrect.toString, 
         onChange := { e => 
           val newPercent = if (e.target.value.isEmpty) 0.0 else e.target.value.toDouble
-          props.updateGradeState(newPercent, state.gd.map(_.comments).getOrElse(""))
+          props.updateGradeState(state.gd.copy(percentCorrect = newPercent))
         },
         onBlur := (e => props.updateGradeOnServer(state.gd))
       ),
       br(),
       "Comment:",
       textarea (
-        value := state.gd.map(_.comments).getOrElse(""),
+        value := state.gd.comments,
         cols := "80",
         onChange := { e => 
           val newComment = e.target.value
-          props.updateGradeState(state.gd.map(_.percentCorrect).getOrElse(0), newComment)
+          props.updateGradeState(state.gd.copy(comments = newComment))
         },
         onBlur := (e => props.updateGradeOnServer(state.gd))
       )

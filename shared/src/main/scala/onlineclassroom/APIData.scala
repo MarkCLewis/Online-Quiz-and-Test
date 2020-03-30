@@ -23,10 +23,10 @@ case class GradeFormulaInfo(id: Int, groupName: String, formula: String)
 case class CourseGradeInformation(assessments: Seq[AssessmentCourseInfo], formulas: Seq[GradeFormulaInfo])
 case class FullInstructorCourseData(students: Seq[FullStudentData], grades: CourseGradeInformation)
 
-case class GradeData(id: Int, answerid: Int, percentCorrect: Double, comments: String)
-case class GradeAnswer(id: Int, userid: Int, courseid: Int, paaid: Int, submitTime: String, answer: ProblemAnswer, gradeData: Option[GradeData])
-case class GradingProblemData(id: Int, spec: ProblemSpec, answers: Seq[GradeAnswer])
-case class AssessmentGradingData(id: Int, name: String, description: String, problems: Seq[GradingProblemData])
+case class GradeData(id: Int, userid: Int, courseid: Int, paaid: Int, percentCorrect: Double, comments: String)
+case class GradeAnswer(id: Int, userid: Int, courseid: Int, paaid: Int, submitTime: String, answer: ProblemAnswer)
+case class GradingProblemData(id: Int, paaid: Int, spec: ProblemSpec, answers: Seq[GradeAnswer], grades: Seq[GradeData])
+case class AssessmentGradingData(id: Int, name: String, description: String, problems: Seq[GradingProblemData], students: Seq[UserData])
 
 case class StudentAssessmentStart(id: Int, userid: Int, aciid: Int, timeStarted: String)
 

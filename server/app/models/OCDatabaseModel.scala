@@ -117,16 +117,11 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
     for(gfi <- formulas; aci <- assessments) yield CourseGradeInformation(aci, gfi)
   }
 
-  def calculateStudentAssessmentPercent(): Future[Double] = {
-    ???
-  }
-
   def studentAssessmentPercent(userid: Int, courseid: Int, assessmentid: Int): Future[Double] = {
     val ungrouped = db.run((for {
-      paa <- ProblemAssessmentAssoc
-      if paa.assessmentid === assessmentid
-      (answer, grade) <- Answer.joinLeft(AnswerGrade).on(_.id === _.answerid)
-      if answer.paaid === paa.id && answer.userid === userid && answer.courseid === courseid
+      (paa, grade) <- ProblemAssessmentAssoc.filter(_.assessmentid === assessmentid)
+        .joinLeft(AnswerGrade.filter(ga => ga.userid === userid && ga.courseid === courseid))
+        .on(_.id === _.paaid)
     } yield (paa.id, paa.weight, paa.extraCredit, grade.map(_.percentCorrect))).result)
     ungrouped.map(_.groupBy(t => (t._1, t._2, t._3))
       .map { case (paaInfo, nums) => paaInfo -> nums.maxBy(_._4.getOrElse(0.0))._4})
@@ -313,36 +308,46 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
       } else Future.successful(0)}
   }
 
+  def getAnswers(courseid: Int, paa: ProblemAssessmentAssocRow): Future[Seq[GradeAnswer]] = {
+    db.run(Answer.filter(a => a.courseid === courseid && a.paaid === paa.id).result)
+      .map(_.map(ar => GradeAnswer(ar.id, ar.userid, ar.courseid, ar.paaid, ar.submitTime.toString(), 
+          Json.fromJson[ProblemAnswer](Json.parse(ar.details)).asOpt.getOrElse(ProblemAnswerError("Info error: " + ar.details)))))
+  }
+
+  def getGrades(courseid: Int, paa: ProblemAssessmentAssocRow): Future[Seq[GradeData]] = {
+    db.run(AnswerGrade.filter(ag => ag.courseid === courseid && ag.paaid === paa.id).result)
+      .map(_.map(ag => GradeData(ag.id, ag.userid, ag.courseid, ag.paaid, ag.percentCorrect, ag.comments)))
+  }
+
   def assessmentGradingData(courseid: Int, assessmentid: Int): Future[AssessmentGradingData] = {
+    val fstudents = db.run(UserCourseAssoc.filter(_.courseid === courseid).join(Users.filter(!_.instructor)).on(_.userid === _.id).result)
+      .map(_.map { case (_, userRow) => UserData(userRow.email, userRow.id, userRow.instructor)})
     val fullResult = db.run (Assessment.filter(_.id === assessmentid).join(ProblemAssessmentAssoc).on(_.id === _.assessmentid).
-      join(Problem).on(_._2.problemid === _.id).joinLeft(Answer).on((t, ans) => t._1._2.id === ans.paaid && ans.courseid === courseid).
-      joinLeft(AnswerGrade).on((t, agrow) => t._2.map(_.id === agrow.answerid)).result)
-    fullResult.map { seq =>
-      seq.map { case ((((assessment, paa), prob), ans), ag) => (assessment, paa, prob, ans, ag) }
-        .groupBy { case (assessment, paa, prob, ans, ag) => assessment }
+      join(Problem).on(_._2.problemid === _.id).result)
+    fullResult.flatMap { seq => fstudents.flatMap { students =>
+      seq.map { case ((assessment, paa), prob) => (assessment, paa, prob) }
+        .groupBy { case (assessment, paa, prob) => assessment }
         .map { case (assessment, aData) =>
-          val problems = aData.groupBy(t => (t._2 -> t._3))
+          val fproblems = Future.sequence(aData.groupBy(t => (t._2 -> t._3))
             .map { case ((paa, problem), probData) =>
-              val answers = probData.flatMap { case (assessment, paa, problem, ansRowOpt, agOpt) =>
-                ansRowOpt.map(ar =>
-                  GradeAnswer(ar.id, ar.userid, ar.courseid, ar.paaid, ar.submitTime.toString(), 
-                    Json.fromJson[ProblemAnswer](Json.parse(ar.details)).asOpt.getOrElse(ProblemAnswerError("Info error: " + ar.details)),
-                    agOpt.map(agr => GradeData(agr.id, agr.answerid, agr.percentCorrect, agr.comments)))
-                )
+              for {
+                answers <- getAnswers(courseid, paa)
+                grades <- getGrades(courseid, paa)
+              } yield {
+                GradingProblemData(problem.id, paa.id, Json.fromJson[ProblemSpec](Json.parse(problem.spec)).asOpt.getOrElse{println(s"info error with: ${problem.spec}"); ProblemSpec(-1, ProblemInfoError("Info error", problem.spec), null)}, answers, grades)
               }
-              GradingProblemData(problem.id, Json.fromJson[ProblemSpec](Json.parse(problem.spec)).asOpt.getOrElse{println(s"info error with: ${problem.spec}"); ProblemSpec(-1, ProblemInfoError("Info error", problem.spec), null)}, answers)
-            }.toSeq
-          AssessmentGradingData(assessment.id, assessment.name, assessment.description, problems.sortBy(_.id))
+            }.toSeq)
+          fproblems.map(problems => AssessmentGradingData(assessment.id, assessment.name, assessment.description, problems.sortBy(_.id), students))
         }.head
-    }
+    } }
   }
 
   def setGradeData(gd: GradeData): Future[Int] = {
     if (gd.id < 0) {
-      db.run(AnswerGrade += AnswerGradeRow(-1, gd.answerid, gd.percentCorrect, gd.comments)).
+      db.run(AnswerGrade += AnswerGradeRow(-1, gd.userid, gd.courseid, gd.paaid, gd.percentCorrect, gd.comments)).
         flatMap(cnt => db.run(AnswerGrade.map(_.id).max.getOrElse(-1).result))
     } else {
-      db.run(AnswerGrade.filter(_.id === gd.id).update(AnswerGradeRow(gd.id, gd.answerid, gd.percentCorrect, gd.comments))).map(cnt => gd.id)
+      db.run(AnswerGrade.filter(_.id === gd.id).update(AnswerGradeRow(gd.id, gd.userid, gd.courseid, gd.paaid, gd.percentCorrect, gd.comments))).map(cnt => gd.id)
     }
   }
 
@@ -361,28 +366,39 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
     } yield f).result).map(formulas => formulas.map(f => GradeFormulaInfo(f.id, f.gradeGroup, f.formula)))
   }
 
-  def studentAssessmentGradingData(userid: Int, courseid: Int, assessmentid: Int): Future[AssessmentGradingData] = {    
+  def getStudentAnswers(userid: Int, courseid: Int, paa: ProblemAssessmentAssocRow): Future[Seq[GradeAnswer]] = {
+    db.run(Answer.filter(a => a.courseid === courseid && a.paaid === paa.id).result)
+      .map(_.map(ar => GradeAnswer(ar.id, ar.userid, ar.courseid, ar.paaid, ar.submitTime.toString(), 
+          Json.fromJson[ProblemAnswer](Json.parse(ar.details)).asOpt.getOrElse(ProblemAnswerError("Info error: " + ar.details)))))
+  }
+
+  def getStudentGrades(userid: Int, courseid: Int, paa: ProblemAssessmentAssocRow): Future[Seq[GradeData]] = {
+    db.run(AnswerGrade.filter(ag => ag.courseid === courseid && ag.paaid === paa.id).result)
+      .map(_.map(ag => GradeData(ag.id, ag.userid, ag.courseid, ag.paaid, ag.percentCorrect, ag.comments)))
+  }
+
+  def studentAssessmentGradingData(userid: Int, courseid: Int, assessmentid: Int): Future[AssessmentGradingData] = { 
     val fullResult = db.run (Assessment.filter(_.id === assessmentid).join(ProblemAssessmentAssoc).on(_.id === _.assessmentid).
-      join(Problem).on(_._2.problemid === _.id).joinLeft(Answer).on((t, ans) => t._1._2.id === ans.paaid && ans.courseid === courseid && ans.userid === userid).
-      joinLeft(AnswerGrade).on((t, agrow) => t._2.map(_.id === agrow.answerid)).result)
-    fullResult.map { seq =>
-      seq.map { case ((((assessment, paa), prob), ans), ag) => (assessment, paa, prob, ans, ag) }
-        .groupBy { case (assessment, paa, prob, ans, ag) => assessment }
+      join(Problem).on(_._2.problemid === _.id).result)
+    fullResult.flatMap { seq =>
+      seq.map { case ((assessment, paa), prob) => (assessment, paa, prob) }
+        .groupBy { case (assessment, paa, prob) => assessment }
         .map { case (assessment, aData) =>
-          val problems = aData.groupBy(t => (t._2 -> t._3))
+          val fproblems = Future.sequence(aData.groupBy(t => (t._2 -> t._3))
             .map { case ((paa, problem), probData) =>
-              val answers = probData.flatMap { case (assessment, paa, problem, ansRowOpt, agOpt) =>
-                ansRowOpt.map(ar =>
-                  GradeAnswer(ar.id, ar.userid, ar.courseid, ar.paaid, ar.submitTime.toString(), 
-                    Json.fromJson[ProblemAnswer](Json.parse(ar.details)).asOpt.getOrElse(ProblemAnswerError("Info error: " + ar.details)),
-                    agOpt.map(agr => GradeData(agr.id, agr.answerid, agr.percentCorrect, agr.comments)))
-                )
+              for {
+                answers <- getStudentAnswers(userid,courseid, paa)
+                grades <- getStudentGrades(userid,courseid, paa)
+              } yield {
+                GradingProblemData(problem.id, paa.id, Json.fromJson[ProblemSpec](Json.parse(problem.spec)).asOpt.getOrElse{println(s"info error with: ${problem.spec}"); ProblemSpec(-1, ProblemInfoError("Info error", problem.spec), null)}, answers, grades)
               }
-              GradingProblemData(problem.id, Json.fromJson[ProblemSpec](Json.parse(problem.spec)).asOpt.getOrElse{println(s"info error with: ${problem.spec}"); ProblemSpec(-1, ProblemInfoError("Info error", problem.spec), null)}, answers)
-            }.toSeq
-          AssessmentGradingData(assessment.id, assessment.name, assessment.description, problems.sortBy(_.id))
+            }.toSeq)
+          fproblems.map(problems => AssessmentGradingData(assessment.id, assessment.name, assessment.description, problems.sortBy(_.id), Nil))
         }.head
     }
   }
 
+  def getInstructors(): Future[Seq[UserData]] = {
+    db.run(Users.filter(_.instructor).result).map(_.map(userRow => UserData(userRow.email, userRow.id, userRow.instructor)))
+  }
 }

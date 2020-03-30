@@ -38,20 +38,34 @@ import onlineclassroom.ReadsAndWrites._
               span (dangerouslySetInnerHTML := js.Dynamic.literal(__html = agd.problems(state.prob).spec.info.prompt)),
               hr ()
             ),
-            div (
-              agd.problems(state.prob).answers.zipWithIndex.map { case (ga, pi) =>
-                (agd.problems(state.prob).spec.info, ga.answer) match {
-                  case (sai: ShortAnswerInfo, saa: ShortAnswerAnswer) => div ( key := pi.toString(),
-                    textarea (value := saa.text, cols := "100", rows := "8", onChange := (e => {})),
+            div {
+              val gpd = agd.problems(state.prob)
+              val answerMap = gpd.answers.map(ga => ga.userid -> ga).toMap
+              val gradeMap = gpd.grades.map(gd => gd.userid -> gd).toMap
+              agd.students.zipWithIndex.map { case (student, i) => 
+                gpd.spec.info match {
+                  case sai: ShortAnswerInfo => div ( key := i.toString(),
+                    answerMap.get(student.id) match {
+                      case Some(ga) =>
+                        ga.answer match {
+                          case saa: ShortAnswerAnswer => div (
+                            textarea (value := saa.text, cols := "100", rows := "8", onChange := (e => {})),
+                            br(),
+                            DrawAnswerComponent(saa.elements.nonEmpty, sai.initialElements, saa.elements, 800, 400, false, elems => {}, elems => {}),
+                          )
+                          case _ => "Answer type mismatch"
+                        }
+                      case None => div (s"No answer for ${student.username}")
+                    },
                     br(),
-                    DrawAnswerComponent(saa.elements.nonEmpty, sai.initialElements, saa.elements, 800, 400, false, elems => {}, elems => {}),
-                    br(),
-                    GradingInputComponent(ga.gradeData, (percent, comment) => updateGradeState(percent, comment, ga, agd, pi), gd => updateGradeOnServer(gd, ga, agd, pi)),
+                    GradingInputComponent(gradeMap.get(student.id).getOrElse(GradeData(-1, props.userData.id, props.course.id, gpd.paaid, 0.0, "")), 
+                      gd => updateGradeState(gd, agd), 
+                      gd => updateGradeOnServer(gd, agd)),
                     hr()
                   )
                 }
               }
-            )
+            }
           ),
           div (
             agd.problems.zipWithIndex.map { case (agd, i) =>
@@ -72,23 +86,32 @@ import onlineclassroom.ReadsAndWrites._
       e => setState(_.copy(message = "Error with Json loading assessment grading data.")))
   }
 
-  def updateGradeState(percent: Double, comment: String, ga: GradeAnswer, agd: AssessmentGradingData, pi: Int): Unit = {
-    val newGA = ga.copy(gradeData = ga.gradeData.map(_.copy(percentCorrect = percent, comments = comment)).orElse(Some(GradeData(-1, ga.id, percent, comment))))
-    val newAnswers: Seq[GradeAnswer] = agd.problems(state.prob).answers.patch(pi, Seq(newGA), 1)
-    val newState = state.copy(gradingData = Some(agd.copy(problems = agd.problems.patch(state.prob, Seq(agd.problems(state.prob).copy(answers = newAnswers)), 1))))
+  def updateGradeState(gd: GradeData, agd: AssessmentGradingData): Unit = {
+    val gradeIndex = agd.problems(state.prob).grades.indexWhere(_.userid == gd.userid)
+    val newGrades = if (gradeIndex < 0) {
+      agd.problems(state.prob).grades :+ gd
+    } else {
+      agd.problems(state.prob).grades.patch(gradeIndex, Seq(gd), 1)
+    }
+    val newState = state.copy(gradingData = Some(agd.copy(problems = agd.problems.patch(state.prob, Seq(agd.problems(state.prob).copy(grades = newGrades)), 1))))
     setState(newState)
   }
 
-  def updateGradeOnServer(ogd: Option[GradeData], ga: GradeAnswer, agd: AssessmentGradingData, pi: Int): Unit = {
-    for (gd <- ogd)
-      PostFetch.fetch("/setGradeData", gd,
-        (newid: Int) => {
-          if (gd.id < 0) {
-            val newGA = ga.copy(gradeData = Some(gd.copy(id = newid)))
-            val newAnswers: Seq[GradeAnswer] = agd.problems(state.prob).answers.patch(pi, Seq(newGA), 1)
-            setState(state.copy(gradingData = Some(agd.copy(problems = agd.problems.patch(state.prob, Seq(agd.problems(state.prob).copy(answers = newAnswers)), 1)))))
+  def updateGradeOnServer(gd: GradeData, agd: AssessmentGradingData): Unit = {
+    PostFetch.fetch("/setGradeData", gd,
+      (newid: Int) => {
+        if (gd.id < 0) {
+          val newGD = gd.copy(id = newid)
+          val gradeIndex = agd.problems(state.prob).grades.indexWhere(_.userid == gd.userid)
+          val newGrades = if (gradeIndex < 0) {
+            agd.problems(state.prob).grades :+ newGD
+          } else {
+            agd.problems(state.prob).grades.patch(gradeIndex, Seq(newGD), 1)
           }
-        },
-        e => setState(_.copy(message = "Error with Json updating data.")))
+          val newState = state.copy(gradingData = Some(agd.copy(problems = agd.problems.patch(state.prob, Seq(agd.problems(state.prob).copy(grades = newGrades)), 1))))
+          setState(newState)
+        }
+      },
+      e => setState(_.copy(message = "Error with Json updating data.")))
   }
 }

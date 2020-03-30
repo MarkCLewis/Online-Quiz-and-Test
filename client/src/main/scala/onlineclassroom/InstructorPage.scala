@@ -31,8 +31,9 @@ object InstructorPageMode extends Enumeration {
 
 @react class InstructorPage extends Component {
   case class Props(userData: UserData)
-  case class State(courses: Seq[CourseData], assessments: Seq[AssessmentData], problems: Seq[ProblemSpec], mode: InstructorPageMode.Value, 
-    message: String, selectedProblem: Option[ProblemSpec], selectedAssessment: Option[AssessmentData], editType: String, selectedIndex: Int)
+  case class State(courses: Seq[CourseData], assessments: Seq[AssessmentData], problems: Seq[ProblemSpec], instructors: Seq[UserData],
+    mode: InstructorPageMode.Value, message: String, selectedProblem: Option[ProblemSpec], selectedAssessment: Option[AssessmentData], 
+    editType: String, selectedIndex: Int)
 
   override def componentDidMount() = {
     loadCourses()
@@ -40,7 +41,7 @@ object InstructorPageMode extends Enumeration {
     loadProblems()
   }
 
-  def initialState = State(Nil, Nil, Nil, InstructorPageMode.TopPage, "", None, None, "", -1)
+  def initialState = State(Nil, Nil, Nil, Nil, InstructorPageMode.TopPage, "", None, None, "", -1)
 
   def render(): ReactElement = state.mode match {
     case InstructorPageMode.TopPage =>
@@ -63,6 +64,8 @@ object InstructorPageMode extends Enumeration {
         hr(),
         h3 ("Assessments"),
         button ("Create", onClick := (e => setState(state.copy(mode = InstructorPageMode.EditAssessment, selectedAssessment = None, selectedIndex = -1)))),
+        br(),
+        "Filter:",
         br(),
         table (
           thead ( tr (th ("Name"), th ("Description"), th ("Auto-grade"))),
@@ -88,6 +91,8 @@ object InstructorPageMode extends Enumeration {
             setState(state.copy(mode = InstructorPageMode.EditProblem, editType = e.target.value, selectedIndex = -1, selectedProblem = None))
           })
         ),
+        br(),
+        "Filter:",
         br(),
         table (
           thead (tr (th ("Type"), th ("Name"), th ("Prompt"))),
@@ -127,6 +132,9 @@ object InstructorPageMode extends Enumeration {
     PostFetch.fetch("getAssessments", props.userData.id,
       (ads: Seq[AssessmentData]) => setState(state.copy(assessments = ads)),
       e => setState(_.copy(message = "Error with JSON loading assessments.")))
+    PostFetch.fetch("/getInstructors", props.userData.id,
+      (instructors: Seq[UserData]) => setState(state.copy(instructors = instructors)),
+      e => setState(_.copy(message = "Error with JSON loading instructors.")))
   }
 
   def loadProblems(): Unit = {
