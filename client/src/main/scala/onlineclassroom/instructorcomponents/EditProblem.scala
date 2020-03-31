@@ -1,5 +1,6 @@
 package onlineclassroom.instructorcomponents
 
+import scalajs.js
 import org.scalajs.dom
 import slinky.core.Component
 import slinky.core.annotations.react
@@ -40,6 +41,8 @@ import onlineclassroom.ReadsAndWrites._
             "Prompt:",
             br(),
             textarea (value := prompt, cols := "100", rows := "8", onChange := (e => setState(state.copy(problemSpec = ps.copy(info = info.copy(prompt = e.target.value)))))),
+            br(),
+            div (dangerouslySetInnerHTML := js.Dynamic.literal(__html = state.problemSpec.info.prompt)),
             br(),
             "Initial Elements (Don't add connections.):",
             br(),

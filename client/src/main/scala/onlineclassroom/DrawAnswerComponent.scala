@@ -61,8 +61,8 @@ object Modes extends Enumeration {
           svg (
             defs (
               marker (
-                id := "arrow", viewBox := "0 0 10 10", refX := 5, refY := 5, markerWidth := 6, markerHeight := 6, orient := "auto",
-                path (d := "M 0 0 L 10 5 L 0 10 z")
+                id := "arrow", viewBox := "0 0 20 20", refX := 10, refY := 10, markerWidth := 8, markerHeight := 8, orient := "auto",
+                path (d := "M 0 0 L 20 10 L 0 20 z")
               )
             ),
             rect (width := props.width.toString, height := props.height.toString),
@@ -200,7 +200,7 @@ object Modes extends Enumeration {
       }
       svg (
         key := (index + keyOffset).toString,
-        path (d := s"M $x1 $y1 C $x1a $y1a, $x2a $y2a, $x2 $y2", markerEnd := "url(#arrow)", fillOpacity := "0.0"),
+        path (d := s"M $x1 $y1 C $x1a $y1a, $x2a $y2a, $x2 $y2", markerEnd := "url(#arrow)", strokeWidth := "2", fillOpacity := "0.0"),
         stroke := (if (index >= 0 && index == state.selected) "red" else "black"),
         onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1, 0)))
       )

@@ -26,15 +26,15 @@ import onlineclassroom._
 import onlineclassroom.ReadsAndWrites._
 
 object InstructorCourseViewModes extends Enumeration {
-  val Normal, Grading, Monitoring = Value
+  val Normal, Grading, Monitoring, ViewSingleAssessment = Value
 }
 
 @react class ViewCourse extends Component {
   case class Props(userData: UserData, course: CourseData, allAssessments: Seq[AssessmentData], exitFunc: () => Unit)
   case class State(message: String, mode: InstructorCourseViewModes.Value, studentData: Seq[FullStudentData], gradeData: Option[CourseGradeInformation], 
-    selectedAssessment: Option[AssessmentCourseInfo], newStudentEmail: String)
+    selectedAssessment: Option[AssessmentCourseInfo], newStudentEmail: String, selectedStudent: Option[UserData], selectedACI: Option[AssessmentCourseInfo])
 
-  def initialState: State = State("", InstructorCourseViewModes.Normal, Nil, None, None, "")
+  def initialState: State = State("", InstructorCourseViewModes.Normal, Nil, None, None, "", None, None)
 
   override def componentDidMount(): Unit = {
     loadData()
@@ -77,7 +77,10 @@ object InstructorCourseViewModes extends Enumeration {
                         onBlur := (e => updateTimeMultiplier(sd.id, props.course.id, sd.timeMultiplier))
                       )), 
                       groups.zipWithIndex.map { case (g, j) => groupColumns(g).zipWithIndex.map { case (colHead, k) => td (key := (j*100+k).toString, 
-                        if (sd.grades.contains(colHead)) sd.grades(colHead) else Formulas.calcFormula(sd.grades, formulaMap.get(g).getOrElse("")))}})
+                        if (sd.grades.contains(colHead)) sd.grades(colHead) else Formulas.calcFormula(sd.grades, formulaMap.get(g).getOrElse("")),
+                        onClick := (e => setState(state.copy(mode = InstructorCourseViewModes.ViewSingleAssessment, 
+                          selectedStudent = Some(UserData(sd.email, sd.id, false)), selectedACI = aciByName.get(colHead))))
+                      )}})
                   }
                 )
               ),
@@ -150,6 +153,8 @@ object InstructorCourseViewModes extends Enumeration {
             GradeAssessment(props.userData, props.course, state.selectedAssessment.get, () => setState(state.copy(mode = InstructorCourseViewModes.Normal)))
           case InstructorCourseViewModes.Monitoring =>
             MonitorAssessmentComponent(props.userData, props.course, state.selectedAssessment.get, state.studentData, () => setState(state.copy(mode = InstructorCourseViewModes.Normal)))
+          case InstructorCourseViewModes.ViewSingleAssessment =>
+            onlineclassroom.studentcomponents.ViewAssessment(state.selectedStudent.get, props.course, state.selectedACI.get, () => setState(state.copy(mode = InstructorCourseViewModes.Normal)))
         }
     }
   }
