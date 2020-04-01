@@ -38,4 +38,8 @@ object TimeMethods {
       s"$hours:$minutes:$seconds"
     }
   }
+
+  def assessmentViewable(aci: AssessmentCourseInfo, serverTime: Date): Boolean = {
+    aci.start.map(new Date(_)).map(_.getTime() < serverTime.getTime()).getOrElse(true)
+  }
 }

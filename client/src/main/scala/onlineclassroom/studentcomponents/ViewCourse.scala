@@ -95,7 +95,7 @@ object CourseViewMode extends Enumeration {
                   val rows: Seq[ReactElement] = groups.zipWithIndex.flatMap { case (g, j) => 
                     groupRows(g).zipWithIndex.map { case (rowHead, k) => 
                       tr (key := (j*100+k).toString, 
-                        td (rowHead, onClick := (e => if (aciByName.contains(rowHead)) setState(state.copy(mode = CourseViewMode.ViewAssessment, selectedAssessment = aciByName.get(rowHead))))),
+                        td (rowHead, onClick := (e => if (aciByName.contains(rowHead) && TimeMethods.assessmentViewable(aciByName(rowHead), state.serverTime)) setState(state.copy(mode = CourseViewMode.ViewAssessment, selectedAssessment = aciByName.get(rowHead))))),
                         td (g),
                         td (if (fsd.grades.contains(rowHead)) fsd.grades(rowHead) else Formulas.calcFormula(fsd.grades, formulaMap.get(g).getOrElse(""))))
                     }
