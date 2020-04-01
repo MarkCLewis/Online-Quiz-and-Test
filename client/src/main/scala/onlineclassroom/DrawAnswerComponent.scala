@@ -39,9 +39,10 @@ object Modes extends Enumeration {
 
   case class Props(startVisible: Boolean, initialElements: Seq[DrawAnswerElement], editableElements: Seq[DrawAnswerElement], width: Double, height: Double, 
     editable: Boolean, setElements: Seq[DrawAnswerElement] => Unit, saveElements: Seq[DrawAnswerElement] => Unit)
-  case class State(visible: Boolean, svgElements: Seq[DrawAnswerElement], selected: Int, subselected: Int, mode: Modes.Value, downLoc: Option[(Double, Double)], curLoc: Option[(Double, Double)])
+  case class State(visible: Boolean, svgElements: Seq[DrawAnswerElement], selected: Int, subselected: Int, mode: Modes.Value, downLoc: Option[(Double, Double)], 
+    curLoc: Option[(Double, Double)], helpVisible: Boolean)
   
-  def initialState = State(props.startVisible, props.editableElements, -1, -1, if (props.editable) Modes.Select else Modes.Nothing, None, None)
+  def initialState = State(props.startVisible, props.editableElements, -1, -1, if (props.editable) Modes.Select else Modes.Nothing, None, None, false)
 
   override def componentDidMount(): Unit = {
     org.scalajs.dom.window.addEventListener("keydown", keyDownHandler)
@@ -77,7 +78,35 @@ object Modes extends Enumeration {
         ),
         {
           import slinky.web.html._
-          button ("Hide Drawing", onClick := (e => setState(state.copy(visible = false))))
+          div (
+            button ("Hide Drawing", onClick := (e => setState(state.copy(visible = false)))),
+            if (state.helpVisible) {
+              div (
+                p ("""This is a simple drawing tool designed to help you draw the types of data structures used in basic
+                  CS courses. There are nine tools across the top that you can select by clicking on the text or drawn
+                  elements. Note that some elements of the drawing might be put there by your instructor. Those
+                  elements can't be selected of altered. You can make connections from or to them."""),
+                ul (
+                  li ("Select - This is the default mode and it allows you to select and move elements that you are drawing."),
+                  li ("Reference Box - This is a labeled box that connectors can come out of. It is intended for things like head or root. Connectors can't point to these."),
+                  li ("Value Box - This just represents an object with a value. Connections can point to it, but it can't point to anything."),
+                  li ("SL Node - This represents an object with one piece of data and one reference, like the node of a singly linked list. Connectors can point to it and the second element can point to things."),
+                  li ("DL/BT Node - This represents an object with one piece of data and two references, like a doubly linked list or a binary tree node. Connectors can point to it and the first and last elements and point to things."),
+                  li ("Array - This represents an array with an arbitrary number of elements. Each element can hold a value and/or can point to things. COnnectors can point to arrays."),
+                  li ("Connector - This makes a connection from elements that allow pointers to elements that can be pointed to. When you make a connection, the initial click can drag it to a destination. Otherwise select and drag changes what is pointed to."),
+                  li ("Free Drawing - This lets you draw arbitrary lines. Don't abuse this. If your drawing has too many elements on a quiz your answer ill have to be deleted and you will get zero points. These can't be connected to or from."),
+                  li ("Text - This lets you write arbitrary text for labels or descriptions. These can't have connections to or from them.")
+                ),
+                p ("""When an element is selected, you can type to add values or labels. The arrow keys will move focus to different parts
+                  of the element. Up and down move to and from the label. Left and right move between elements in the array. In addition,
+                  Ctrl-X will delete the selected element. Elements can be added to an Array with Insert or Ctrl-I. They can be removed with 
+                  Delete or Ctrl-Z"""),
+                button ("Hide Help", onClick := (e => setState(state.copy(helpVisible = false))))
+              )
+            } else {
+              button ("Show Drawing Help", onClick := (e => setState(state.copy(helpVisible = true))))
+            }
+          )
         }
       )
     } else {
@@ -101,7 +130,7 @@ object Modes extends Enumeration {
       elementToSVG(ReferenceBox(120, 25, "ref") -> -2, 0, Some(e => { e.stopPropagation; setState(state.copy(mode = Modes.RefBox, selected = -1, subselected = -1)) })),
       elementToSVG(ValueBox(200, 25, "?", "Value") -> -3, 0, Some(e => { e.stopPropagation; setState(state.copy(mode = Modes.ValBox, selected = -1, subselected = -1)) })),
       elementToSVG(DoubleBox(280, 25, "?", "SL") -> -4, 0, Some(e => { e.stopPropagation; setState(state.copy(mode = Modes.DoubleNode, selected = -1, subselected = -1)) })),
-      elementToSVG(TripleBox(360, 25, "?", "DL/BST") -> -5, 0, Some(e => { e.stopPropagation; setState(state.copy(mode = Modes.TripleNode, selected = -1, subselected = -1)) })),
+      elementToSVG(TripleBox(360, 25, "?", "DL/BT") -> -5, 0, Some(e => { e.stopPropagation; setState(state.copy(mode = Modes.TripleNode, selected = -1, subselected = -1)) })),
       elementToSVG(ArrayOfBoxes(440, 25, Array("?", "?", "?", "..."), "Array") -> -6, 0, Some(e => { e.stopPropagation; setState(state.copy(mode = Modes.Array, selected = -1, subselected = -1)) })),
       svg (
         text (x := 520, y := 20, textAnchor := "middle", "Connect", stroke := "black", fill := "black"),
