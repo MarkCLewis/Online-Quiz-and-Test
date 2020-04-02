@@ -25,7 +25,7 @@ import slinky.web.html.div
   def initialState = State(Nil)
 
   def render(): ReactElement = DrawAnswerComponent(false, Nil, state.elems, props.width, props.height, true, 
-    elems => {println(elems); setState(state.copy(elems = elems))}, elems => {})
+    elems => setState(state.copy(elems = elems)), elems => {})
 }
 
 object Modes extends Enumeration {
