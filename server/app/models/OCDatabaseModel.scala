@@ -126,10 +126,8 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
     ungrouped.map(_.groupBy(t => (t._1, t._2, t._3))
       .map { case (paaInfo, nums) => paaInfo -> nums.maxBy(_._4.getOrElse(0.0))._4})
       .map { g =>
-        println(s"Calc percent $userid with $g")
         val totalWeight: Double = g.map { case ((paaid, weight, ec), percent) => if (ec) 0.0 else weight}.sum
         val totalPoints = g.map { case ((paaid, weight, ec), percent) => weight * percent.getOrElse(0.0)}.sum
-        println(s"$totalWeight / $totalPoints")
         if (totalWeight == 0.0) 0.0 else totalPoints / totalWeight
       }
   }
@@ -206,7 +204,6 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
   }
 
   def saveAssessmentCourseAssoc(aci: AssessmentCourseInfo): Future[Int] = {
-    println(aci)
     if(aci.id < 0) {
       db.run(AssessmentCourseAssoc += AssessmentCourseAssocRow(-1, aci.courseid, aci.assessmentid, aci.points, aci.group, aci.autoGrade, aci.start.map(Timestamp.valueOf), aci.end.map(Timestamp.valueOf), aci.timeLimit)).flatMap(num => db.run(AssessmentCourseAssoc.map(_.id).max.result)).map(_.getOrElse(-1))
     } else {
@@ -299,10 +296,8 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
   }
 
   def addStudentToCourse(email: String, courseid: Int): Future[Int] = {
-    println(s"Searching for $email")
     val student = db.run(Users.filter(_.email === email).result)
     student.flatMap { s => 
-      println(s"Adding $s")
       if (s.nonEmpty) {
         db.run(UserCourseAssoc += UserCourseAssocRow(s.head.id, courseid, 1.0))
       } else Future.successful(0)}

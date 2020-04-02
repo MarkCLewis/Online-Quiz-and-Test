@@ -155,7 +155,7 @@ object Modes extends Enumeration {
         text (x := px, y := py-5, textAnchor := "middle", stroke := (if (state.selected == index) "cyan" else "black"), fill := "black", label),
         rect (x := px-10, y := py, width := boxSize.toString, height := boxSize.toString),
         stroke := (if (index >= 0 && index == state.selected) "red" else "black"),
-        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1, 0)))
+        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1)))
       )
     case (ValueBox(px, py, value, label), index) =>
       svg (
@@ -164,7 +164,7 @@ object Modes extends Enumeration {
         rect (x := px-20, y := py, width := (2*boxSize).toString, height := boxSize.toString),
         text (x := px, y := py+15, textAnchor := "middle", stroke := (if (state.selected == index && state.subselected == 0) "cyan" else "black"), fill := "black", value),
         stroke := (if (index >= 0 && index == state.selected) "red" else "black"),
-        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1, 0)))
+        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1)))
       )
     case (DoubleBox(px, py, value, label), index) =>
       svg (
@@ -174,7 +174,7 @@ object Modes extends Enumeration {
         text (x := px-10, y := py+15, textAnchor := "middle", stroke := (if (state.selected == index && state.subselected == 0) "cyan" else "black"), fill := "black", value),
         rect (x := px, y := py, width := boxSize.toString, height := boxSize.toString),
         stroke := (if (index >= 0 && index == state.selected) "red" else "black"),
-        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1, 0)))
+        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1)))
       )
     case (TripleBox(px, py, value, label), index) =>
       svg (
@@ -185,7 +185,7 @@ object Modes extends Enumeration {
         text (x := px, y := py+15, textAnchor := "middle", stroke := (if (state.selected == index && state.subselected == 0) "cyan" else "black"), fill := "black", value),
         rect (x := px+10, y := py, width := boxSize.toString, height := boxSize.toString),
         stroke := (if (index >= 0 && index == state.selected) "red" else "black"),
-        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1, 0)))
+        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1)))
       )
     case (ArrayOfBoxes(px, py, values, label), index) =>
       svg (
@@ -198,7 +198,7 @@ object Modes extends Enumeration {
           )
         },
         stroke := (if (index >= 0 && index == state.selected) "red" else "black"),
-        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1, 0)))
+        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1)))
       )
     case (Connector(e1, sub1, e2), index) =>
       val (x1, y1, x1a, y1a) = elemByIndex(e1) match {
@@ -231,14 +231,14 @@ object Modes extends Enumeration {
         key := (index + keyOffset).toString,
         path (d := s"M $x1 $y1 C $x1a $y1a, $x2a $y2a, $x2 $y2", markerEnd := "url(#arrow)", strokeWidth := "2", fillOpacity := "0.0"),
         stroke := (if (index >= 0 && index == state.selected) "red" else "black"),
-        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1, 0)))
+        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1)))
       )
     case (Curve(pnts), index) =>
       svg (
         key := (index + keyOffset).toString,
         polyline (points := pnts.map { case (x, y) => s"$x,$y" }.mkString(" "), fillOpacity := "0.0"),
         stroke := (if (index >= 0 && index == state.selected) "red" else "black"),
-        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1, 0)))
+        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1)))
       )
     case (Text(px, py, msg), index) =>
       text (
@@ -247,7 +247,7 @@ object Modes extends Enumeration {
         msg,
         stroke := (if (index >= 0 && index == state.selected) "cyan" else "black"),
         fill := (if (index >= 0 && index == state.selected) "cyan" else "black"),
-        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1, 0)))
+        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1)))
       )
   }
 
@@ -373,12 +373,12 @@ object Modes extends Enumeration {
     setState(state.copy(downLoc = None, curLoc = None))
   }
 
-  def elementMouseDownHandler(e: SyntheticMouseEvent[Element], elem: DrawAnswerElement, sub: Int): Unit = {
+  def elementMouseDownHandler(e: SyntheticMouseEvent[Element], elem: DrawAnswerElement): Unit = {
     val x = e.nativeEvent.asInstanceOf[scalajs.js.Dynamic].offsetX.asInstanceOf[Double]
     val y = e.nativeEvent.asInstanceOf[scalajs.js.Dynamic].offsetY.asInstanceOf[Double]
     e.stopPropagation()
     if (state.mode == Modes.Select) {
-      setState(state.copy(selected = state.svgElements.indexOf(elem), subselected = sub, downLoc = Some(x -> y)))
+      setState(state.copy(selected = state.svgElements.indexOf(elem), subselected = 0, downLoc = Some(x -> y)))
     } else if (state.mode == Modes.Connector) {
       elem match {
         case _: ReferenceBox | _: DoubleBox | _: TripleBox | _: ArrayOfBoxes =>
@@ -390,7 +390,7 @@ object Modes extends Enumeration {
               case _ => None
           }
           val e1 = indexForElem(elem)
-          if (state.svgElements.collect { case c: Connector => c }.forall(_.e1 != e1)) {
+          if (state.svgElements.collect { case c: Connector => c }.forall(c => c.e1 != e1 || c.sub1 != ostart.getOrElse(-1))) {
             for (sub1 <- ostart; e2 <- findEndConnection(x, y, indexForElem(elem))) {
               setState(state.copy(svgElements = addElement(Connector(e1, sub1, e2)), selected = state.svgElements.length, subselected = 0, downLoc = Some(x -> y)))  
             }
