@@ -60,7 +60,7 @@ import onlineclassroom.ReadsAndWrites._
                       case None => div (s"No answer for ${student.username}")
                     },
                     br(),
-                    GradingInputComponent(gradeMap.get(student.id).getOrElse(GradeData(-1, props.userData.id, props.course.id, gpd.paaid, 0.0, "")), 
+                    GradingInputComponent(gradeMap.get(student.id).getOrElse(GradeData(-1, student.id, props.course.id, gpd.paaid, 0.0, "")), 
                       gd => updateGradeState(gd, agd), 
                       gd => updateGradeOnServer(gd, agd)),
                     hr()
