@@ -89,12 +89,15 @@ import onlineclassroom.ReadsAndWrites._
   }
 
   def updateGradeState(gd: GradeData, agd: AssessmentGradingData): Unit = {
+    println(s"updating grade $gd")
     val gradeIndex = agd.problems(state.prob).grades.indexWhere(_.userid == gd.userid)
+    println(s"Index is $gradeIndex")
     val newGrades = if (gradeIndex < 0) {
       agd.problems(state.prob).grades :+ gd
     } else {
       agd.problems(state.prob).grades.patch(gradeIndex, Seq(gd), 1)
     }
+    println(s"newGrades = $newGrades")
     val newState = state.copy(gradingData = Some(agd.copy(problems = agd.problems.patch(state.prob, Seq(agd.problems(state.prob).copy(grades = newGrades)), 1))))
     setState(newState)
   }
