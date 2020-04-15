@@ -29,7 +29,7 @@ import slinky.web.html.div
 }
 
 object Modes extends Enumeration {
-  val Select, RefBox, ValBox, DoubleNode, TripleNode, Array, Connector, Curve, Text, Nothing = this.Value
+  val Select, RefBox, ValBox, DoubleNode, TripleNode, Array, GraphNode, Connector, Curve, Text, Nothing = this.Value
 }
 
 @react class DrawAnswerComponent extends Component {
@@ -113,7 +113,7 @@ object Modes extends Enumeration {
       {
         import slinky.web.html._
         div (
-          if (state.svgElements.nonEmpty) "Has elements." else "No elements.",
+          if (state.svgElements.nonEmpty) "Has elements to see!!!" else "Drawing empty.",
           button ("Show Drawing", onClick := (e => setState(state.copy(visible = true))))
         )
       }
@@ -132,17 +132,18 @@ object Modes extends Enumeration {
       elementToSVG(DoubleBox(280, 25, "?", "SL") -> -4, 0, Some(e => { e.stopPropagation; setState(state.copy(mode = Modes.DoubleNode, selected = -1, subselected = -1)) })),
       elementToSVG(TripleBox(360, 25, "?", "DL/BT") -> -5, 0, Some(e => { e.stopPropagation; setState(state.copy(mode = Modes.TripleNode, selected = -1, subselected = -1)) })),
       elementToSVG(ArrayOfBoxes(440, 25, Array("?", "?", "?", "..."), "Array") -> -6, 0, Some(e => { e.stopPropagation; setState(state.copy(mode = Modes.Array, selected = -1, subselected = -1)) })),
+      elementToSVG(GraphNode(520, 25, "Graph") -> -7, 0, Some(e => { e.stopPropagation; setState(state.copy(mode = Modes.GraphNode, selected = -1, subselected = -1)) })),
       svg (
-        text (x := 520, y := 20, textAnchor := "middle", "Connect", stroke := "black", fill := "black"),
-        line (x1 := 490, y1 := 25, x2 := 550, y2 := 45, markerEnd := "url(#arrow)"),
+        text (x := 600, y := 20, textAnchor := "middle", "Connect", stroke := "black", fill := "black"),
+        line (x1 := 570, y1 := 25, x2 := 630, y2 := 45, markerEnd := "url(#arrow)"),
         onMouseDown := (e => { e.stopPropagation; setState(state.copy(mode = Modes.Connector, selected = -1, subselected = -1)) })
       ),
       svg (
-        text (x := 600, y := 20, textAnchor := "middle", "Free", stroke := "black", fill := "black"),
-        path (d := "M 570 25 C 630 25, 570 45, 630 45", stroke := "black", fillOpacity := "0.0"),
+        text (x := 680, y := 20, textAnchor := "middle", "Free", stroke := "black", fill := "black"),
+        path (d := "M 650 25 C 710 25, 650 45, 710 45", stroke := "black", fillOpacity := "0.0"),
         onMouseDown := (e => { e.stopPropagation; setState(state.copy(mode = Modes.Curve, selected = -1, subselected = -1)) })
       ),
-      text (x := 680, y := 30, textAnchor := "middle", "Text", stroke := "black", fill := "black",
+      text (x := 760, y := 30, textAnchor := "middle", "Text", stroke := "black", fill := "black",
         onMouseDown := (e => { e.stopPropagation; setState(state.copy(mode = Modes.Text, selected = -1, subselected = -1)) })),
       onMouseDown := (e => e.stopPropagation())
     )
@@ -200,6 +201,14 @@ object Modes extends Enumeration {
         stroke := (if (index >= 0 && index == state.selected) "red" else "black"),
         onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1)))
       )
+    case (GraphNode(px, py, label), index) =>
+      svg (
+        key := (index + keyOffset).toString,
+        text (x := px, y := py-5, textAnchor := "middle", stroke := (if (state.selected == index) "cyan" else "black"), fill := "black", label),
+        circle (cx := px, cy := py + 10, r := (boxSize/2).toString, fill := (if (index >= 0 && index == state.selected) "red" else "black")),
+        stroke := (if (index >= 0 && index == state.selected) "red" else "black"),
+        onMouseDown := (e => specialMouseHandler.map(f => f(e)).getOrElse(elementMouseDownHandler(e, ei._1)))
+      )
     case (Connector(e1, sub1, e2), index) =>
       val (x1, y1, x1a, y1a) = elemByIndex(e1) match {
         case elem@ReferenceBox(px, py, label) => (px, py + boxSize*0.5, px + curveOffset, py + boxSize*0.5)
@@ -210,6 +219,7 @@ object Modes extends Enumeration {
         case elem@ArrayOfBoxes(px, py, values, label) => 
           val sx = px - 0.5*boxSize*values.length + 0.5*boxSize + boxSize * sub1
           (sx, py + boxSize*0.5, sx, py + boxSize*0.5 + curveOffset)
+        case elem@GraphNode(px, py, label) => (px, py + boxSize/2, px + curveOffset, py + boxSize*0.5)
         case _ => (0.0, 0.0, 0.0, 0.0)
       }
       def endHelper(px: Double, py: Double, sizeX: Double, sizeY: Double): (Double, Double, Double, Double) = {
@@ -223,6 +233,10 @@ object Modes extends Enumeration {
         case elem@DoubleBox(px, py, value, label) => endHelper(px, py + boxSize * 0.5, boxSize, boxSize*0.5)
         case elem@TripleBox(px, py, value, label) => endHelper(px, py + boxSize * 0.5, boxSize*1.5, boxSize*0.5)
         case elem@ArrayOfBoxes(px, py, values, label) => endHelper(px, py + boxSize * 0.5, 0.5 * boxSize * values.length, boxSize*0.5)
+        case elem@GraphNode(px, py, label) => 
+          val sgnX = (x1 - px).signum
+          val sgnY = (y1 - py).signum
+          (px + sgnX * curveOffset, py + sgnY * curveOffset, px + 0.7 * sgnX * boxSize / 2, py + (1.0 + 0.7 * sgnY) * boxSize / 2)
         case elem => 
           println(s"Connector bad match for $e2, $elem")
           (0.0, 0.0, 0.0, 0.0)
@@ -284,6 +298,8 @@ object Modes extends Enumeration {
             helper(values.length, if (state.subselected < 0) label else values(state.subselected), 
               str => updateElement(state.selected, if (state.subselected < 0) elem.copy(label = str) else elem.copy(values = values.patch(state.subselected, Seq(str), 1))))
           }
+        case elem@GraphNode(px, py, label) => 
+          helper(0, label, str => updateElement(state.selected, elem.copy(label = str)))
         case elem@Text(px, py, label) => 
           helper(0, label, str => updateElement(state.selected, elem.copy(msg = str)))
         case _ =>
@@ -307,6 +323,8 @@ object Modes extends Enumeration {
         setState(state.copy(svgElements = addElement(TripleBox(x, y, "", "")), selected = 0, subselected = 0))
       case Modes.Array =>
         setState(state.copy(svgElements = addElement(ArrayOfBoxes(x, y, Seq.fill(8)(""), "")), selected = 0, subselected = 0))
+      case Modes.GraphNode =>
+        setState(state.copy(svgElements = addElement(GraphNode(x, y, "")), selected = 0, subselected = 0))
       case Modes.Connector =>
         // Do nothing. Can't start a connector in open space.
       case Modes.Curve =>
@@ -338,6 +356,9 @@ object Modes extends Enumeration {
             updateElement(state.selected, elem.copy(px = elem.px + dx, py = elem.py + dy))
             setState(state.copy(downLoc = Some(x -> y), curLoc = Some(x -> y)))
           case elem@ArrayOfBoxes(px, py, values, label) => 
+            updateElement(state.selected, elem.copy(px = elem.px + dx, py = elem.py + dy))
+            setState(state.copy(downLoc = Some(x -> y), curLoc = Some(x -> y)))
+          case elem@GraphNode(px, py, label) => 
             updateElement(state.selected, elem.copy(px = elem.px + dx, py = elem.py + dy))
             setState(state.copy(downLoc = Some(x -> y), curLoc = Some(x -> y)))
           case Connector(e1, sub1, e2) =>
@@ -381,16 +402,17 @@ object Modes extends Enumeration {
       setState(state.copy(selected = state.svgElements.indexOf(elem), subselected = 0, downLoc = Some(x -> y)))
     } else if (state.mode == Modes.Connector) {
       elem match {
-        case _: ReferenceBox | _: DoubleBox | _: TripleBox | _: ArrayOfBoxes =>
+        case _: ReferenceBox | _: DoubleBox | _: TripleBox | _: ArrayOfBoxes | _: GraphNode =>
           val ostart = elem match {
               case elem@ReferenceBox(px, py, label) => Some(0)
               case elem@DoubleBox(px, py, value, label) => Some(0)
               case elem@TripleBox(px, py, value, label) => Some(if(x < px) 0 else 1)
               case elem@ArrayOfBoxes(px, py, values, label) => Some(((x - (px - boxSize * 0.5 * values.length)) / boxSize).toInt)
+              case elem@GraphNode(px, py, label) => Some(0)
               case _ => None
           }
           val e1 = indexForElem(elem)
-          if (state.svgElements.collect { case c: Connector => c }.forall(c => c.e1 != e1 || c.sub1 != ostart.getOrElse(-1))) {
+          if (state.svgElements.collect { case c: Connector => c }.forall(c => c.e1 != e1 || c.sub1 != ostart.getOrElse(-1) || elem.isInstanceOf[GraphNode])) {
             for (sub1 <- ostart; e2 <- findEndConnection(x, y, indexForElem(elem))) {
               setState(state.copy(svgElements = addElement(Connector(e1, sub1, e2)), selected = state.svgElements.length, subselected = 0, downLoc = Some(x -> y)))  
             }
@@ -447,12 +469,13 @@ object Modes extends Enumeration {
         case elem@DoubleBox(px, py, value, label) => distToSqr(px, py)
         case elem@TripleBox(px, py, value, label) => distToSqr(px, py)
         case elem@ArrayOfBoxes(px, py, values, label) => distToSqr(px, py)
+        case elem@GraphNode(px, py, label) => distToSqr(px, py)
         case _ => 1e100
       }
     }
     val e2 = elemByIndex(closest._2)
     e2 match {
-      case _: ValueBox | _: DoubleBox | _: TripleBox | _: ArrayOfBoxes => Some(closest._2)
+      case _: ValueBox | _: DoubleBox | _: TripleBox | _: ArrayOfBoxes | _: GraphNode=> Some(closest._2)
       case _ => None
     }
   }

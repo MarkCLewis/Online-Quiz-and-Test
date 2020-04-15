@@ -13,7 +13,7 @@ import onlineclassroom._
 import onlineclassroom.ReadsAndWrites._
 
 @react class GradingInputComponent extends Component {
-  case class Props(gd: GradeData, updateGradeState: GradeData => Unit, updateGradeOnServer: GradeData => Unit)
+  case class Props(gd: GradeData, email: String, updateGradeState: GradeData => Unit, updateGradeOnServer: GradeData => Unit)
   case class State(gd: GradeData)
 
   def initialState: State = State(props.gd)
@@ -28,6 +28,7 @@ import onlineclassroom.ReadsAndWrites._
         },
         onBlur := (e => props.updateGradeOnServer(state.gd))
       ),
+      span ("Hover for email", title := props.email),
       br(),
       "Comment:",
       textarea (

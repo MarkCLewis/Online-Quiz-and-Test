@@ -48,6 +48,7 @@ object CourseViewMode extends Enumeration {
     val startMap = state.starts.map(s => s.aciid -> s).toMap
     state.mode match {
       case CourseViewMode.Normal =>
+        val openAssessments = state.assessments.filterNot(aci => TimeMethods.assessmentClosed(aci, startMap.get(aci.id), state.serverTime, state.multiplier))
         div (
           // TODO: Row tables with grades.
           "All times in the server's timezone.",
@@ -55,22 +56,22 @@ object CourseViewMode extends Enumeration {
           "Server Time:",
           state.serverTime.toLocaleString(),
           br(),
-          h3 ("Assessments:"),
+          h3 ("Assessments"),
           "Click an assessment name to start that assessment. You can only reach assessments here when they are open. To see assessments after you are done use the grades table below.",
           br(),
           table (
             thead ( tr ( th ("Name"), th ("Start Time"), th ("End Time"), th ("Length [Minutes]"), th ("Status"))),
             tbody (
-              state.assessments.zipWithIndex.map { case (a, i) =>
-                val start = a.start.getOrElse("None")
-                val end = a.end.getOrElse("None")
-                val limit = a.timeLimit.map(limit => if (state.multiplier != 1.0) s"$limit x ${state.multiplier}" else limit.toString).getOrElse("None")
+              openAssessments.zipWithIndex.map { case (aci, i) =>
+                val start = aci.start.getOrElse("None")
+                val end = aci.end.getOrElse("None")
+                val limit = aci.timeLimit.map(limit => if (state.multiplier != 1.0) s"$limit x ${state.multiplier}" else limit.toString).getOrElse("None")
                 tr ( key := i.toString, 
-                  td (a.name, onClick := (e => if (TimeMethods.assessmentOpen(a, startMap.get(a.id), state.serverTime, state.multiplier)) setState(state.copy(mode = CourseViewMode.TakeAssessment, selectedAssessment = Some(a))))), 
+                  td (aci.name, onClick := (e => if (TimeMethods.assessmentOpen(aci, startMap.get(aci.id), state.serverTime, state.multiplier)) setState(state.copy(mode = CourseViewMode.TakeAssessment, selectedAssessment = Some(aci))))), 
                   td (start),
                   td (end),
                   td (limit),
-                  td (if (TimeMethods.assessmentOpen(a, startMap.get(a.id), state.serverTime, state.multiplier)) "Open" else "Closed") 
+                  td (if (TimeMethods.assessmentOpen(aci, startMap.get(aci.id), state.serverTime, state.multiplier)) "Open" else "Closed") 
                 )
               }
             )
@@ -101,7 +102,7 @@ object CourseViewMode extends Enumeration {
                     }
                   }
                   rows
-                } else Seq(div ():ReactElement)
+                } else Seq(tr ():ReactElement)
               }
             }
           ),

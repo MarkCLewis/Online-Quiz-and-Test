@@ -93,6 +93,9 @@ object ReadsAndWrites {
   implicit val arrayOfBoxesWrites = Json.writes[ArrayOfBoxes]
   implicit val arrayOfBoxesReads = Json.reads[ArrayOfBoxes]
 
+  implicit val graphNodeWrites = Json.writes[GraphNode]
+  implicit val graphNodeReads = Json.reads[GraphNode]
+
   implicit val connectorWrites = Json.writes[Connector]
   implicit val connectorReads = Json.reads[Connector]
 

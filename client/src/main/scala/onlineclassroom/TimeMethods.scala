@@ -14,6 +14,15 @@ object TimeMethods {
     validWithStart && validWithEnd && validWithLimit
   }
 
+  def assessmentClosed(aci: AssessmentCourseInfo, studentStart: Option[StudentAssessmentStart], serverTime: Date, multiplier: Double): Boolean = {
+    val endDate = aci.end.map(new Date(_))
+    val afterEnd = endDate.map(_.getTime() < serverTime.getTime()).getOrElse(false)
+    val afterLimit = (for ( start <- studentStart; limit <- aci.timeLimit) yield { 
+      serverTime.getTime() > new Date(start.timeStarted).getTime() + limit * multiplier * 60000 
+    }).getOrElse(false)
+    afterEnd || afterLimit
+  }
+
   /**
     * Returns the miliseconds until this assessment closes.
     *

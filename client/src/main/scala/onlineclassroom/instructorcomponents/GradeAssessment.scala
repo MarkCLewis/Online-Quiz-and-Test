@@ -61,6 +61,7 @@ import onlineclassroom.ReadsAndWrites._
                     },
                     br(),
                     GradingInputComponent(gradeMap.get(student.id).getOrElse(GradeData(-1, student.id, props.course.id, gpd.paaid, 0.0, "")), 
+                      student.username,
                       gd => updateGradeState(gd, agd), 
                       gd => updateGradeOnServer(gd, agd)),
                     hr()

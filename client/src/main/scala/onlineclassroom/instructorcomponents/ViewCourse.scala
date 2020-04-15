@@ -45,8 +45,8 @@ object InstructorCourseViewModes extends Enumeration {
       case None =>
       div ("Loading Course Data ...", state.message)
       case Some(gd) =>
-        state.mode match {
-          case InstructorCourseViewModes.Normal =>
+      state.mode match {
+        case InstructorCourseViewModes.Normal =>
             val adMap = props.allAssessments.map(ad => ad.id -> ad).toMap
             val aciByName = gd.assessments.map(aci => aci.name -> aci).toMap
             val groupedAssessments = gd.assessments.groupBy(_.group)
