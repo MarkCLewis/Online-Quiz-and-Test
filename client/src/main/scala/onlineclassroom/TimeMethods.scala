@@ -48,7 +48,12 @@ object TimeMethods {
     }
   }
 
-  def assessmentViewable(aci: AssessmentCourseInfo, serverTime: Date): Boolean = {
-    aci.start.map(new Date(_)).map(_.getTime() < serverTime.getTime()).getOrElse(true)
+  def assessmentViewable(aci: AssessmentCourseInfo, studentStart: Option[StudentAssessmentStart], serverTime: Date): Boolean = {
+    val startDate = aci.start.map(new Date(_))
+    val endDate = aci.end.map(new Date(_))
+    val afterEnd = endDate.map(_.getTime() < serverTime.getTime()).getOrElse(true)
+    val afterStart = startDate.map(_.getTime() < serverTime.getTime()).getOrElse(true)
+    val limitAndStudentStarted = aci.timeLimit.nonEmpty && studentStart.nonEmpty
+    afterStart && (limitAndStudentStarted || afterEnd)
   }
 }
