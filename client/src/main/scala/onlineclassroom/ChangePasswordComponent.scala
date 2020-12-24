@@ -46,7 +46,12 @@ import ReadsAndWrites._
       headers.set("Csrf-Token", dom.document.getElementsByTagName("body").apply(0).getAttribute("data-token"))
       Fetch.fetch(
         s"/changePassword",
-        RequestInit(method = HttpMethod.POST, mode = RequestMode.cors, headers = headers, body = Json.toJson(PasswordChangeData(props.userData.id, state.oldPassword, state.newPassword)).toString())
+        new RequestInit {
+          method = HttpMethod.POST
+          mode = RequestMode.cors
+          headers = headers
+          body = Json.toJson(PasswordChangeData(props.userData.id, state.oldPassword, state.newPassword)).toString()
+        }
       ).flatMap(_.text()).map { res =>
         Json.fromJson[Boolean](Json.parse(res)) match {
           case JsSuccess(worked, path) =>

@@ -15,7 +15,11 @@ object PostFetch {
     headers.set("Csrf-Token", dom.document.getElementsByTagName("body").apply(0).getAttribute("data-token"))
     Fetch.fetch(
       url,
-      RequestInit(method = HttpMethod.POST, headers = headers, body = Json.toJson(data).toString())
+      new RequestInit {
+        method = HttpMethod.POST
+        headers = headers
+        body = Json.toJson(data).toString()
+      }
     ).flatMap(_.text()).map { res =>
       Json.fromJson[B](Json.parse(res)) match {
         case JsSuccess(ret, path) => 

@@ -2,6 +2,8 @@ private.txt
 
 .metals
 .bloop
+.bsp
+.vscode
 
 logs
 project/project
