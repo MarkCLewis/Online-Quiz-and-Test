@@ -35,6 +35,12 @@ import onlineclassroom.ReadsAndWrites._
     )
   }
 
+  override def componentDidUpdate(prevProps: Props, prevState: State): Unit = {
+    if (prevProps.editable && !props.editable) {
+      mergeAnswer(state.answer.text, state.answer.elements, true)
+    }
+  }
+
   def saveText(text: String): Unit = {
     mergeAnswer(text, state.answer.elements) 
   }
@@ -43,8 +49,8 @@ import onlineclassroom.ReadsAndWrites._
     mergeAnswer(state.answer.text, elems)
   }
 
-  def mergeAnswer(text: String, elems: Seq[DrawAnswerElement]): Unit = {
-    if (props.editable) {
+  def mergeAnswer(text: String, elems: Seq[DrawAnswerElement], force: Boolean = false): Unit = {
+    if (props.editable || force) {
       PostFetch.fetch("/mergeAnswer", SaveAnswerInfo(state.answerid.getOrElse(-1), props.user.id, props.course.id, props.paaid, state.answer.copy(text = text, elements = elems)),
         (answerid: Int) => setState(state.copy(answerid = Some(answerid))),
         e => setState(_.copy(message = "Error with JSON response merging answers.")))

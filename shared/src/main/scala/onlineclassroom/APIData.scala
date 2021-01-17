@@ -53,12 +53,13 @@ sealed trait ProblemInfo {
   def name: String
   def prompt: String
 }
-case class MultipleChoiceInfo(name: String, prompt: String, options: Seq[Int]) extends ProblemInfo
+case class MultipleChoiceInfo(name: String, prompt: String, options: Seq[String]) extends ProblemInfo
 case class ShortAnswerInfo(name: String, prompt: String, initialElements: Seq[DrawAnswerElement]) extends ProblemInfo
 case class WriteFunctionInfo(name: String, prompt: String, functionName: String, varSpecs: Seq[VariableSpec]) extends ProblemInfo
 case class WriteLambdaInfo(name: String, prompt: String, returnType: String, varSpecs: Seq[VariableSpec]) extends ProblemInfo
 case class WriteExpressionInfo(name: String, prompt: String, varSpecs: Seq[VariableSpec], generalSetup: String) extends ProblemInfo
 case class DrawingInfo(name: String, prompt: String, initialElements: Seq[DrawAnswerElement]) extends ProblemInfo
+// Parson's Problem
 case class ManualEntryInfo(name: String) extends ProblemInfo { def prompt = "Manual Entry" }
 case class ProblemInfoError(name: String, prompt: String) extends ProblemInfo
 

@@ -84,15 +84,10 @@ object CourseViewMode extends Enumeration {
               state.studentData.map { fsd =>
                 if (state.assessments.nonEmpty) {
                   val aciByName = state.assessments.map(aci => aci.name -> aci).toMap
-                  println(s"aciByName = $aciByName")
                   val groupedAssessments = state.assessments.groupBy(_.group)
-                  println(s"groupedAssessments = $groupedAssessments")
                   val groups = groupedAssessments.keys.toSeq.distinct.sortWith((g1, g2) => if (g1.isEmpty || g2.isEmpty) g1 > g2 else g1 < g2)
-                  println(s"groups = $groups")
                   val formulaMap = state.formulas.map(f => f.groupName -> f.formula).toMap
-                  println(s"formulaMap = $formulaMap")
                   val groupRows = groupedAssessments.map { case (group, saci) => group -> (saci.map(_.name).sorted ++ (if (formulaMap.contains(group)) Seq("Total") else Nil))}
-                  println(s"groupedRows = $groupRows")
                   val rows: Seq[ReactElement] = groups.zipWithIndex.flatMap { case (g, j) => 
                     groupRows(g).zipWithIndex.map { case (rowHead, k) => 
                       tr (key := (j*100+k).toString, 

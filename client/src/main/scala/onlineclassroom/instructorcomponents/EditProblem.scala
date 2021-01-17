@@ -22,6 +22,7 @@ import onlineclassroom.ReadsAndWrites._
     case None =>
       props.editType match {
         case "SA" => ProblemSpec(-1, ShortAnswerInfo("", "", Nil), ShortAnswerGradeInfo(0))
+        case "MC" => ProblemSpec(-1, MultipleChoiceInfo("", "", Nil), MultipleChoiceGradeInfo(0))
         // TODO: Need to add in other types of problems for creating
       }
   })
@@ -33,22 +34,31 @@ import onlineclassroom.ReadsAndWrites._
       ps.info match {
         case info@ShortAnswerInfo(name, prompt, initialElements) => 
           div (
-            "Short Answer Edit/Create",
-            br(),
-            "Name:",
-            input (`type` := "text", value := name, onChange := (e => setState(state.copy(problemSpec = ps.copy(info = info.copy(name = e.target.value)))))),
-            br(),
-            "Prompt:",
-            br(),
-            textarea (value := prompt, cols := "100", rows := "8", onChange := (e => setState(state.copy(problemSpec = ps.copy(info = info.copy(prompt = e.target.value)))))),
-            br(),
-            div (dangerouslySetInnerHTML := js.Dynamic.literal(__html = state.problemSpec.info.prompt)),
-            br(),
+            nameAndPrompt(ps, "Short Answer Edit/Create", name, prompt, name => info.copy(name = name), prompt => info.copy(prompt = prompt)),
             "Initial Elements (Don't add connections.):",
             br(),
             DrawAnswerComponent(true, Nil, initialElements, 800, 400, true, 
               elems => setState(state.copy(problemSpec = ps.copy(info = info.copy(initialElements = elems)))),
               elems => setState(state.copy(problemSpec = ps.copy(info = info.copy(initialElements = elems)))))
+          )
+        case info@MultipleChoiceInfo(name, prompt, options) =>
+          div (
+            nameAndPrompt(ps, "Multiple Choice Edit/Create", name, prompt, name => info.copy(name = name), prompt => info.copy(prompt = prompt)),
+            "Options",
+            br(),
+            options.zipWithIndex.map { case (opt, i) =>
+              div (
+                key := s"key$i",
+                input (`type` := "radio", checked := (state.problemSpec.answerInfo.asInstanceOf[MultipleChoiceGradeInfo].correct == i),
+                  onChange := (e => setState(state.copy(problemSpec = ps.copy(answerInfo = MultipleChoiceGradeInfo(i)))))),
+                input (`type` := "text", value := opt,
+                  onChange := (e => setState(state.copy(problemSpec = ps.copy(info = info.copy(options = options.patch(i, List(e.target.value), 1))))))),
+                button (`type` := "button", "Remove",
+                  onClick := (e => setState(state.copy(problemSpec = ps.copy(info = info.copy(options = options.patch(i, Nil, 1)))))))
+              )
+            },
+            button (`type` := "button", "Add Option",
+              onClick := (e => setState(state.copy(problemSpec = ps.copy(info = info.copy(options = options :+ ""))))))
           )
         // TODO: Need to add in other types of problems for editing.
       },
@@ -71,5 +81,20 @@ import onlineclassroom.ReadsAndWrites._
         }
         props.realoadProblemsFunc()
       }, e => setState(state.copy(message = "Error with JSON parsing in save.")))
+  }
+
+  def nameAndPrompt(ps: ProblemSpec, header: String, name: String, prompt: String, infoNameSet: String => ProblemInfo, infoPromptSet: String => ProblemInfo): ReactElement = {
+    div (
+      header,
+      br(),
+      "Name:",
+      input (`type` := "text", value := name, onChange := (e => setState(state.copy(problemSpec = ps.copy(info = infoNameSet(e.target.value)))))),
+      br(),
+      "Prompt:",
+      br(),
+      textarea (value := prompt, cols := "100", rows := "8", onChange := (e => setState(state.copy(problemSpec = ps.copy(info = infoPromptSet(e.target.value)))))),
+      br(),
+      div (dangerouslySetInnerHTML := js.Dynamic.literal(__html = state.problemSpec.info.prompt)),
+    )
   }
 }

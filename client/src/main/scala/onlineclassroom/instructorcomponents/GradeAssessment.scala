@@ -66,6 +66,24 @@ import onlineclassroom.ReadsAndWrites._
                       gd => updateGradeOnServer(gd, agd)),
                     hr()
                   )
+                  case mci: MultipleChoiceInfo => div ( key := i.toString(),
+                    answerMap.get(student.id) match {
+                      case Some(ga) =>
+                        ga.answer match {
+                          case mca: MultipleChoiceAnswer => div (
+                            s"${mca.answer} - ${mci.options(mca.answer)}",
+                          )
+                          case _ => "Answer type mismatch"
+                        }
+                      case None => div (s"No answer for ${student.username}")
+                    },
+                    br(),
+                    GradingInputComponent(gradeMap.get(student.id).getOrElse(GradeData(-1, student.id, props.course.id, gpd.paaid, 0.0, "")), 
+                      student.username,
+                      gd => updateGradeState(gd, agd), 
+                      gd => updateGradeOnServer(gd, agd)),
+                    hr()
+                  )
                 }
               }
             }

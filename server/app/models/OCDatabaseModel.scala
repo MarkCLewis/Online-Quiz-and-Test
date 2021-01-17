@@ -155,11 +155,11 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
     db.run(UserCourseAssoc.filter(uca => uca.courseid === courseid && uca.userid =!= instructorid).result).flatMap(s => Future.sequence(s.map(uca => studentGradeData(uca.userid, uca.courseid))))
   }
 
-  def saveOrCreateProblem(spec: ProblemSpec): Future[Int] = {
+  def saveOrCreateProblem(spec: ProblemSpec, userid: Int): Future[Int] = {
     if (spec.id < 0) {
-      db.run(Problem += ProblemRow(-1, Json.toJson(spec).toString)).flatMap(num => db.run(Problem.map(_.id).max.result)).map(_.getOrElse(-1))
+      db.run(Problem += ProblemRow(-1, Json.toJson(spec).toString, userid)).flatMap(num => db.run(Problem.map(_.id).max.result)).map(_.getOrElse(-1))
     } else {
-      db.run(Problem.filter(_.id === spec.id).update(ProblemRow(spec.id, Json.toJson(spec).toString))).map(_ => spec.id)
+      db.run(Problem.filter(_.id === spec.id).update(ProblemRow(spec.id, Json.toJson(spec).toString, userid))).map(_ => spec.id)
     }
   }
 
@@ -175,11 +175,11 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
     })
   }
 
-  def saveOrCreateAssessment(ad: AssessmentData): Future[Int] = {
+  def saveOrCreateAssessment(ad: AssessmentData, userid: Int): Future[Int] = {
     if(ad.id < 0) {
-      db.run(Assessment += AssessmentRow(-1, ad.name, ad.description, ad.autoGrade)).flatMap(num => db.run(Assessment.map(_.id).max.result)).map(_.getOrElse(-1))
+      db.run(Assessment += AssessmentRow(-1, ad.name, ad.description, ad.autoGrade, userid)).flatMap(num => db.run(Assessment.map(_.id).max.result)).map(_.getOrElse(-1))
     } else {
-      db.run(Assessment.filter(_.id === ad.id).update(AssessmentRow(ad.id, ad.name, ad.description, ad.autoGrade))).map(_ => ad.id)
+      db.run(Assessment.filter(_.id === ad.id).update(AssessmentRow(ad.id, ad.name, ad.description, ad.autoGrade, userid))).map(_ => ad.id)
     }
   }
 

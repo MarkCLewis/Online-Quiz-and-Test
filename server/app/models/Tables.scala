@@ -107,8 +107,8 @@ trait Tables {
    *  @param name Database column name SqlType(varchar), Length(30,true)
    *  @param description Database column description SqlType(varchar), Length(2000,true)
    *  @param autoGrade Database column auto_grade SqlType(int4)
-   *  @param creatorid Database column creatorid SqlType(int4), Default(27) */
-  case class AssessmentRow(id: Int, name: String, description: String, autoGrade: Int, creatorid: Int = 27)
+   *  @param creatorid Database column creatorid SqlType(int4) */
+  case class AssessmentRow(id: Int, name: String, description: String, autoGrade: Int, creatorid: Int)
   /** GetResult implicit for fetching AssessmentRow objects using plain SQL queries */
   implicit def GetResultAssessmentRow(implicit e0: GR[Int], e1: GR[String]): GR[AssessmentRow] = GR{
     prs => import prs._
@@ -284,8 +284,8 @@ trait Tables {
   /** Entity class storing rows of table Problem
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param spec Database column spec SqlType(varchar), Length(20000,true)
-   *  @param creatorid Database column creatorid SqlType(int4), Default(27) */
-  case class ProblemRow(id: Int, spec: String, creatorid: Int = 27)
+   *  @param creatorid Database column creatorid SqlType(int4) */
+  case class ProblemRow(id: Int, spec: String, creatorid: Int)
   /** GetResult implicit for fetching ProblemRow objects using plain SQL queries */
   implicit def GetResultProblemRow(implicit e0: GR[Int], e1: GR[String]): GR[ProblemRow] = GR{
     prs => import prs._

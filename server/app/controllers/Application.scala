@@ -110,7 +110,7 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
 
   def saveProblem = AuthenticatedInstructorAction { implicit request =>
     withJsonBody[ProblemSpec] { problemSpec =>
-      model.saveOrCreateProblem(problemSpec).map(id => Ok(Json.toJson(id)))
+      model.saveOrCreateProblem(problemSpec, request.session("userid").toInt).map(id => Ok(Json.toJson(id)))
     }
   }
 
@@ -122,7 +122,7 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
 
   def saveAssessment = AuthenticatedInstructorAction { implicit request =>
     withJsonBody[AssessmentData] { ad =>
-      model.saveOrCreateAssessment(ad).map(id => Ok(Json.toJson(id)))
+      model.saveOrCreateAssessment(ad, request.session("userid").toInt).map(id => Ok(Json.toJson(id)))
     }
   }
 
@@ -202,7 +202,7 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
   def addAnswer = AuthenticatedAction { implicit request =>
     // TODO: This doesn't currently handle auto-grading. That will be needed.
     withJsonBody[SaveAnswerInfo] { sai =>
-      model.mergeAnswer(sai).map(aid => Ok(Json.toJson(aid)))
+      model.addAnswer(sai).map(aid => Ok(Json.toJson(aid)))
     }
   }
 

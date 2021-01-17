@@ -55,6 +55,13 @@ import scala.scalajs.js.Date
                 newsaa => setState(state.copy(problems = state.problems.patch(i, Seq(p.copy(answer = Some(newsaa))), 1))) ),
               hr()
             )
+          case (mci: MultipleChoiceInfo, mca: Option[MultipleChoiceAnswer]) =>
+            div ( key := i.toString,
+              h3 (s"Problem ${i+1}"),
+              MultipleChoiceQuestion(props.userData, props.course, p.paaid, mci, mca, open, 
+                newsaa => setState(state.copy(problems = state.problems.patch(i, Seq(p.copy(answer = Some(newsaa))), 1))) ),
+              hr()
+            )
         }
       },
       button ("Done", onClick := (e => props.exitFunc()))

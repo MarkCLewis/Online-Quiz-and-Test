@@ -41,15 +41,15 @@ import ReadsAndWrites._
     if (state.oldPassword.isEmpty) setState(state.copy(message = "Old password is required."))
     else if (state.newPassword.isEmpty) setState(state.copy(message = "New password is required."))
     else {
-      val headers = new Headers()
-      headers.set("Content-Type", "application/json")
-      headers.set("Csrf-Token", dom.document.getElementsByTagName("body").apply(0).getAttribute("data-token"))
+      val hs = new Headers()
+      hs.set("Content-Type", "application/json")
+      hs.set("Csrf-Token", dom.document.getElementsByTagName("body").apply(0).getAttribute("data-token"))
       Fetch.fetch(
         s"/changePassword",
         new RequestInit {
           method = HttpMethod.POST
           mode = RequestMode.cors
-          headers = headers
+          headers = hs
           body = Json.toJson(PasswordChangeData(props.userData.id, state.oldPassword, state.newPassword)).toString()
         }
       ).flatMap(_.text()).map { res =>

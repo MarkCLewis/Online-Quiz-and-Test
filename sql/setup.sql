@@ -88,7 +88,9 @@ CREATE TABLE answer (
 
 CREATE TABLE answer_grade (
   id SERIAL PRIMARY KEY,
-  answerid int NOT NULL REFERENCES answer(id) ON DELETE CASCADE,
+  userid int NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  courseid int NOT NULL REFERENCES course(id) ON DELETE CASCADE,
+  paaid int NOT NULL REFERENCES problem_assessment_assoc(id) ON DELETE CASCADE,
   percent_correct double precision NOT NULL,
   comments varchar(200) NOT NULL
 );
@@ -101,7 +103,16 @@ CREATE TABLE assessment_start_time (
 );
 
 
-/******************************************************/
+/********************************************************/
+/* This code is an old version of answer_grade and what */
+/* was written to correct it.                           */
+/********************************************************/
+CREATE TABLE answer_grade (
+  id SERIAL PRIMARY KEY,
+  answerid int NOT NULL REFERENCES answer(id) ON DELETE CASCADE,
+  percent_correct double precision NOT NULL,
+  comments varchar(200) NOT NULL
+);
 
 CREATE TABLE answer_grade_copy (
   id SERIAL PRIMARY KEY,

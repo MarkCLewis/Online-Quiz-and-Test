@@ -35,6 +35,9 @@ import scala.scalajs.js.Date
               (gpd.spec.info, gpd.answers.lastOption.map(_.answer)) match {
                 case (sai: ShortAnswerInfo, lastAnswer: Option[ShortAnswerAnswer]) =>
                   ShortAnswerQuestion(props.userData, props.course, -1, sai, lastAnswer, false, ans => {})
+                case (mci: MultipleChoiceInfo, lastAnswer: Option[MultipleChoiceAnswer]) =>
+                  MultipleChoiceQuestion(props.userData, props.course, -1, mci, lastAnswer, false, ans => {})
+
               },
               br (),
               "Percent: ",
