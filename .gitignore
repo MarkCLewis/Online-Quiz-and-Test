@@ -4,6 +4,7 @@ private.txt
 .bloop
 .bsp
 .vscode
+scala-*
 
 logs
 project/project

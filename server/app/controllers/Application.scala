@@ -32,6 +32,7 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
 
   val model = new OCDatabaseModel(db)
   model.initializeIfNeeded()
+  models.ScalaSetup.downloadScala()
 
   def index = Action { implicit request =>
     Ok(views.html.index()) 
