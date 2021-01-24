@@ -11,9 +11,11 @@ object ScalaSetup {
     * other platforms for testing purposes.
     */
   def downloadScala(): Unit = {
-    Seq("wget", url).!
-    val tarFile = url.takeRight(url.length - url.lastIndexOf("/") - 1)
-    Seq("tar", "xzf", tarFile).!
-    Seq("rm", s"$tarFile").!
+    if (!new java.io.File(scalaHome).exists) {
+      Seq("wget", url).!
+      val tarFile = url.takeRight(url.length - url.lastIndexOf("/") - 1)
+      Seq("tar", "xzf", tarFile).!
+      Seq("rm", s"$tarFile").!
+    }
   }
 }
