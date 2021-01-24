@@ -42,15 +42,11 @@ lazy val shared = crossProject(JSPlatform, JVMPlatform)
   .in(file("shared"))
   .settings(commonSettings)
 	.settings(
-		name := "online-class-shared",
+    name := "online-class-shared",
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.2" % Test
 	)
 lazy val sharedJvm = shared.jvm
 lazy val sharedJs = shared.js
-
-lazy val submitCode = (project in file("submitCode")).settings(
-  scalaVersion := "2.12.12",
-  organization := "edu.trinity"
-)
 
 lazy val commonSettings = Seq(
   scalaVersion := "2.12.12",

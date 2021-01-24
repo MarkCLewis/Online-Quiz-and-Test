@@ -213,4 +213,12 @@ object ReadsAndWrites {
   implicit val assessmentGradingDataWrites = Json.writes[AssessmentGradingData]
   implicit val assessmentGradingDataReads = Json.reads[AssessmentGradingData]
   
+  implicit val codeSubmitResponseWrites = Json.writes[CodeSubmitResponse]
+  implicit val codeSubmitResponseReads = Json.reads[CodeSubmitResponse]
+
+  implicit val autoGradeRequestWrites = Json.writes[AutoGradeRequest]
+  implicit val autoGradeRequestReads = Json.reads[AutoGradeRequest]
+
+  implicit val autoGradeResponseWrites = Json.writes[AutoGradeResponse]
+  implicit val autoGradeResponseReads = Json.reads[AutoGradeResponse]
 }

@@ -26,7 +26,7 @@ import instructorcomponents._
 
 
 object InstructorPageMode extends Enumeration {
-  val TopPage, ChangePassword, CreatCourse, DisplayCourse, EditProblem, EditAssessment = Value
+  val TopPage, ChangePassword, CreatCourse, DisplayCourse, DisplayCourseSummary, EditProblem, EditAssessment = Value
 }
 
 @react class InstructorPage extends Component {
@@ -55,11 +55,22 @@ object InstructorPageMode extends Enumeration {
         CreateUser(props.userData),
         hr(),
         h3 ("Courses"),
-        div ( ul (
-          state.courses.zipWithIndex.map { case (course, index) =>
-            li (key := index.toString, s"${course.name}-${course.semester}-${course.section}", 
-              onClick := (e => setState(state.copy(mode = InstructorPageMode.DisplayCourse, selectedIndex = index))))
-          }
+        div ( table (
+          thead (
+            tr (
+              th ("Course"),
+              th ("View Summary")
+            )
+          ),
+          tbody (
+            state.courses.zipWithIndex.map { case (course, index) =>
+              tr (key := index.toString, 
+                td (s"${course.name}-${course.semester}-${course.section}", 
+                  onClick := (e => setState(state.copy(mode = InstructorPageMode.DisplayCourse, selectedIndex = index)))),
+                td ("Summary", onClick := (e => setState(state.copy(mode = InstructorPageMode.DisplayCourseSummary, selectedIndex = index))))
+              )
+            }
+          )
         ) ),
         hr(),
         h3 ("Assessments"),
@@ -114,6 +125,8 @@ object InstructorPageMode extends Enumeration {
         () => { loadCourses(); setState(state.copy(mode = InstructorPageMode.TopPage)) })
     case InstructorPageMode.DisplayCourse =>
       ViewCourse(props.userData, state.courses(state.selectedIndex), state.assessments, () => setState(state.copy(mode = InstructorPageMode.TopPage)))
+    case InstructorPageMode.DisplayCourseSummary =>
+      ViewCourseSummary(props.userData, state.courses(state.selectedIndex), state.assessments, () => setState(state.copy(mode = InstructorPageMode.TopPage)))
     case InstructorPageMode.EditProblem =>
       EditProblem(state.editType, state.selectedProblem, () => setState(state.copy(mode = InstructorPageMode.TopPage)), () => loadProblems())
     case InstructorPageMode.EditAssessment =>

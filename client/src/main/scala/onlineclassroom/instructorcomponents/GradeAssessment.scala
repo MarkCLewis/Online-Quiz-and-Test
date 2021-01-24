@@ -84,6 +84,58 @@ import onlineclassroom.ReadsAndWrites._
                       gd => updateGradeOnServer(gd, agd)),
                     hr()
                   )
+                  case wfi: WriteFunctionInfo => div ( key := i.toString(),
+                    answerMap.get(student.id) match {
+                      case Some(ga) =>
+                        ga.answer match {
+                          case wfa: WriteFunctionAnswer => 
+                            textarea (value := wfa.code, cols := "100", rows := "8", onChange := (e => {}))
+                          case _ => "Answer type mismatch"
+                        }
+                      case None => div (s"No answer for ${student.username}")
+                    },
+                    br(),
+                    GradingInputComponent(gradeMap.get(student.id).getOrElse(GradeData(-1, student.id, props.course.id, gpd.paaid, 0.0, "")), 
+                      student.username,
+                      gd => updateGradeState(gd, agd), 
+                      gd => updateGradeOnServer(gd, agd)),
+                    hr()
+                  )
+                  case wei: WriteExpressionInfo => div ( key := i.toString(),
+                    answerMap.get(student.id) match {
+                      case Some(ga) =>
+                        ga.answer match {
+                          case wea: WriteExpressionAnswer => 
+                            textarea (value := wea.code, cols := "100", rows := "8", onChange := (e => {}))
+                          case _ => "Answer type mismatch"
+                        }
+                      case None => div (s"No answer for ${student.username}")
+                    },
+                    br(),
+                    GradingInputComponent(gradeMap.get(student.id).getOrElse(GradeData(-1, student.id, props.course.id, gpd.paaid, 0.0, "")), 
+                      student.username,
+                      gd => updateGradeState(gd, agd), 
+                      gd => updateGradeOnServer(gd, agd)),
+                    hr()
+                  )
+                  case di: DrawingInfo => div ( key := i.toString(),
+                    answerMap.get(student.id) match {
+                      case Some(ga) =>
+                        ga.answer match {
+                          case da: DrawingAnswer => div (
+                            DrawAnswerComponent(da.elements.nonEmpty, di.initialElements, da.elements, 800, 400, false, elems => {}, elems => {}),
+                          )
+                          case _ => "Answer type mismatch"
+                        }
+                      case None => div (s"No answer for ${student.username}")
+                    },
+                    br(),
+                    GradingInputComponent(gradeMap.get(student.id).getOrElse(GradeData(-1, student.id, props.course.id, gpd.paaid, 0.0, "")), 
+                      student.username,
+                      gd => updateGradeState(gd, agd), 
+                      gd => updateGradeOnServer(gd, agd)),
+                    hr()
+                  )
                 }
               }
             }

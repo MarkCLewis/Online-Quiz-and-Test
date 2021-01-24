@@ -5,47 +5,30 @@ object VariableType extends Enumeration {
   val Int, Double, String = Value
 }
 
-object VariableSpec {
-  val IntSpecType = 0
-  val DoubleSpecType = 1
-  val StringSpecType = 2
-  val IntListSpecType = 3
-  val IntArraySpecType = 4
-  val StringListSpecType = 5
-  val IntArrayArraySpecType = 6
-  val DoubleArrayArraySpecType = 7
-  
-}
-
 sealed trait VariableSpec {
   val name: String
   val typeName: String
-  val typeNumber: Int
-  val paramNumber: Int
   def codeGenerator(): String // Return a string that is code to generate this value. 
 }
 
-case class IntSpec(paramNumber:Int, name: String, min: Int, max: Int) extends VariableSpec {
+case class IntSpec(name: String, min: Int, max: Int) extends VariableSpec {
   val typeName = "Int"
-  val typeNumber = VariableSpec.IntSpecType
 
   def codeGenerator(): String = {
     s"val $name = util.Random.nextInt(($max)-($min))+($min)"
   }
 }
 
-case class DoubleSpec(paramNumber:Int, name: String, min: Double, max: Double) extends VariableSpec {
+case class DoubleSpec(name: String, min: Double, max: Double) extends VariableSpec {
   val typeName = "Double"
-  val typeNumber = VariableSpec.DoubleSpecType
 
   def codeGenerator(): String = {
     s"val $name = math.random*(($max)-($min))+($min)"
   }
 }
 
-case class StringSpec(paramNumber:Int, name: String, length: Int, genCode: String) extends VariableSpec {
+case class StringSpec(name: String, length: Int, genCode: String) extends VariableSpec {
   val typeName = "String"
-  val typeNumber = VariableSpec.StringSpecType
 
   def codeGenerator(): String = {
     if(genCode.isEmpty())
@@ -55,27 +38,24 @@ case class StringSpec(paramNumber:Int, name: String, length: Int, genCode: Strin
   }
 }
 
-case class ListIntSpec(paramNumber:Int, name: String, minLen:Int, maxLen:Int, min: Int, max: Int) extends VariableSpec {
+case class ListIntSpec(name: String, minLen:Int, maxLen:Int, min: Int, max: Int) extends VariableSpec {
   val typeName = "List[Int]"
-  val typeNumber = VariableSpec.IntListSpecType
 
   def codeGenerator(): String = {
     s"val $name = List.fill(util.Random.nextInt(($maxLen)-($minLen))+($minLen))(util.Random.nextInt(($max)-($min))+($min))"
   }
 }
 
-case class ArrayIntSpec(paramNumber:Int, name: String, minLen:Int, maxLen:Int, min: Int, max: Int) extends VariableSpec {
+case class ArrayIntSpec(name: String, minLen:Int, maxLen:Int, min: Int, max: Int) extends VariableSpec {
   val typeName = "Array[Int]"
-  val typeNumber = VariableSpec.IntArraySpecType
 
   def codeGenerator(): String = {
     s"val $name = Array.fill(util.Random.nextInt(($maxLen)-($minLen))+($minLen))(util.Random.nextInt(($max)-($min))+($min))"
   }
 }
 
-case class ListStringSpec(paramNumber:Int, name: String, minLen:Int, maxLen:Int, stringLength: Int, genCode: String) extends VariableSpec {
+case class ListStringSpec(name: String, minLen:Int, maxLen:Int, stringLength: Int, genCode: String) extends VariableSpec {
   val typeName = "List[String]"
-  val typeNumber = VariableSpec.StringListSpecType
 
   def codeGenerator(): String = {
     if(genCode.isEmpty())
@@ -85,9 +65,8 @@ case class ListStringSpec(paramNumber:Int, name: String, minLen:Int, maxLen:Int,
   }
 }
 
-case class ArrayArrayIntSpec(paramNumber:Int, name: String, minLen1:Int, maxLen1:Int, minLen2:Int, maxLen2:Int, min: Int, max: Int) extends VariableSpec {
+case class ArrayArrayIntSpec(name: String, minLen1:Int, maxLen1:Int, minLen2:Int, maxLen2:Int, min: Int, max: Int) extends VariableSpec {
   val typeName = "Array[Array[Int]]"
-  val typeNumber = VariableSpec.IntArrayArraySpecType
 
   def codeGenerator(): String = {
     s"val $name = Array.fill(util.Random.nextInt(($maxLen1)-($minLen1))+($minLen1),"+
@@ -95,9 +74,8 @@ case class ArrayArrayIntSpec(paramNumber:Int, name: String, minLen1:Int, maxLen1
   }
 }
 
-case class ArrayArrayDoubleSpec(paramNumber:Int, name: String, minLen1:Int, maxLen1:Int, minLen2:Int, maxLen2:Int, min: Double, max: Double) extends VariableSpec {
+case class ArrayArrayDoubleSpec(name: String, minLen1:Int, maxLen1:Int, minLen2:Int, maxLen2:Int, min: Double, max: Double) extends VariableSpec {
   val typeName = "Array[Array[Double]]"
-  val typeNumber = VariableSpec.DoubleArrayArraySpecType
 
   def codeGenerator(): String = {
     s"val $name = Array.fill(util.Random.nextInt(($maxLen1)-($minLen1))+($minLen1),"+

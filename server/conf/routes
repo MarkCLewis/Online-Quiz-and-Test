@@ -38,6 +38,10 @@ POST       /getFullStudentData           controllers.Application.getFullStudentD
 POST       /getFormulas                  controllers.Application.getFormulas
 POST       /studentAssessmentGradingData controllers.Application.studentAssessmentGradingData
 POST       /getInstructors               controllers.Application.getInstructors
+POST       /autoGrade                    controllers.Application.autoGrade
+
+# WebSocket Call
+GET        /submitSocket                 controllers.Application.submitSocket
 
 # Prefix must match `play.assets.urlPrefix`
 GET        /assets/*file                 controllers.Assets.at(file)

@@ -37,7 +37,14 @@ import scala.scalajs.js.Date
                   ShortAnswerQuestion(props.userData, props.course, -1, sai, lastAnswer, false, ans => {})
                 case (mci: MultipleChoiceInfo, lastAnswer: Option[MultipleChoiceAnswer]) =>
                   MultipleChoiceQuestion(props.userData, props.course, -1, mci, lastAnswer, false, ans => {})
-
+                case (wfi: WriteFunctionInfo, lastAnswer: Option[WriteFunctionAnswer]) =>
+                  WriteFunctionQuestion(props.userData, props.course, -1, wfi, lastAnswer, false, ans => {})
+                case (wei: WriteExpressionInfo, lastAnswer: Option[WriteExpressionAnswer]) =>
+                  WriteExpressionQuestion(props.userData, props.course, -1, wei, lastAnswer, false, ans => {})
+                case (wli: WriteLambdaInfo, lastAnswer: Option[WriteLambdaAnswer]) =>
+                  WriteLambdaQuestion(props.userData, props.course, -1, wli, lastAnswer, false, ans => {})
+                case (di: DrawingInfo, lastAnswer: Option[DrawingAnswer]) =>
+                  DrawingQuestion(props.userData, props.course, -1, di, lastAnswer, false, ans => {})
               },
               br (),
               "Percent: ",

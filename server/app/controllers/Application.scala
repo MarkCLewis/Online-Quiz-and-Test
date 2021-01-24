@@ -23,7 +23,8 @@ import scala.concurrent.Future
 import java.sql.Timestamp
 
 @Singleton
-class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvider, cc: ControllerComponents)(implicit ec: ExecutionContext) 
+class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvider, cc: ControllerComponents)
+    (implicit system: ActorSystem, mat: Materializer, ec: ExecutionContext) 
     extends AbstractController(cc) with HasDatabaseConfigProvider[JdbcProfile] {
 
   import ControlHelpers._
@@ -200,7 +201,6 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
   }
 
   def addAnswer = AuthenticatedAction { implicit request =>
-    // TODO: This doesn't currently handle auto-grading. That will be needed.
     withJsonBody[SaveAnswerInfo] { sai =>
       model.addAnswer(sai).map(aid => Ok(Json.toJson(aid)))
     }
@@ -213,8 +213,10 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
   }
 
   def assessmentGradingData = AuthenticatedInstructorAction { implicit request =>
+    println("get grade data")
     withJsonBody[(Int, Int)] { case (courseid, assessmentid) =>
-      model.assessmentGradingData(courseid, assessmentid).map(agd => Ok(Json.toJson(agd)))
+      println("Json parsed")
+      model.assessmentGradingData(courseid, assessmentid).map(agd => {println("Responding"); Ok(Json.toJson(agd))})
     }
   }
 
@@ -257,6 +259,19 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
   def getInstructors = AuthenticatedInstructorAction { implicit request =>
     withJsonBody[Int] { userid =>
       model.getInstructors().map(instructors => Ok(Json.toJson(instructors)))
+    }
+  }
+
+  def autoGrade = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[AutoGradeRequest] { agr =>
+      model.autoGrade(agr).map(resp => Ok(Json.toJson(resp)))
+    }
+  }
+
+  def submitSocket = WebSocket.accept[JsValue, JsValue] { request =>
+    println("Request for socket " + request)
+    ActorFlow.actorRef { out =>
+      actors.SubmitActor.props(out, model)
     }
   }
 }

@@ -163,6 +163,18 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
     }
   }
 
+  def oneProblemFromPAAID(paaid: Int): Future[Option[ProblemSpec]] = {
+    db.run(ProblemAssessmentAssoc.filter(_.id === paaid).join(Problem).on(_.problemid === _.id).result).map(prs => prs.flatMap { case (_, pr) => 
+      Json.fromJson[ProblemSpec](Json.parse(pr.spec)) match {
+        case JsSuccess(ps, path) =>
+          Some(ProblemSpec(pr.id, ps.info, ps.answerInfo))
+        case e@JsError(_) => 
+          println("Error parsing spec for problem " + pr)
+          None
+      }
+    }.headOption)
+  }
+
   def allProblems(): Future[Seq[ProblemSpec]] = {
     db.run(Problem.result).map(prs => prs.flatMap { pr => 
       Json.fromJson[ProblemSpec](Json.parse(pr.spec)) match {
@@ -254,7 +266,7 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
           answer <- Answer
           if answer.userid === userid && answer.courseid === courseid && answer.paaid === paa.id
         } yield answer).result)
-        val fanswer = answers.map(_.lastOption)
+        val fanswer = answers.map(as => if (as.isEmpty) None else Some(as.maxBy(_.id)))
         fanswer.map { answerRow =>
           val probAnswer = answerRow.map(ar => Json.fromJson[ProblemAnswer](Json.parse(ar.details)).asOpt.getOrElse(ProblemAnswerError(s"Error parsing: ${ar.details}")))
           val info = Json.fromJson[ProblemSpec](Json.parse(problem.spec)).asOpt.map(_.info).getOrElse(ProblemInfoError("Error", s"Parsing: ${problem.spec}"))
@@ -339,8 +351,14 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
 
   def setGradeData(gd: GradeData): Future[Int] = {
     if (gd.id < 0) {
-      db.run(AnswerGrade += AnswerGradeRow(-1, gd.userid, gd.courseid, gd.paaid, gd.percentCorrect, gd.comments)).
-        flatMap(cnt => db.run(AnswerGrade.map(_.id).max.getOrElse(-1).result))
+      val fCurrent = db.run(AnswerGrade.filter(ag => ag.userid === gd.userid && ag.courseid === gd.courseid && ag.paaid === gd.paaid).result)
+      fCurrent.flatMap { current =>
+        if (current.isEmpty) {
+          db.run(AnswerGrade += AnswerGradeRow(-1, gd.userid, gd.courseid, gd.paaid, gd.percentCorrect, gd.comments)).
+            flatMap(cnt => db.run(AnswerGrade.map(_.id).max.getOrElse(-1).result))
+        } else {
+          db.run(AnswerGrade.filter(_.id === current.head.id).update(AnswerGradeRow(gd.id, gd.userid, gd.courseid, gd.paaid, gd.percentCorrect, gd.comments))).map(cnt => gd.id)        }
+      }
     } else {
       db.run(AnswerGrade.filter(_.id === gd.id).update(AnswerGradeRow(gd.id, gd.userid, gd.courseid, gd.paaid, gd.percentCorrect, gd.comments))).map(cnt => gd.id)
     }
@@ -395,5 +413,59 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
 
   def getInstructors(): Future[Seq[UserData]] = {
     db.run(Users.filter(_.instructor).result).map(_.map(userRow => UserData(userRow.email, userRow.id, userRow.instructor)))
+  }
+
+  def autoGrade(agr: AutoGradeRequest): Future[AutoGradeResponse] = {
+    val fProblems = db.run (
+      (for {
+        paa <- ProblemAssessmentAssoc
+        if paa.assessmentid === agr.assessmentid
+        problem <- Problem
+        if problem.id === paa.problemid
+      } yield {
+        (paa, problem)
+      }).result
+    )
+    fProblems.map { problemData =>
+      for ((paa, prob) <- problemData) yield {
+        Json.fromJson[ProblemSpec](Json.parse(prob.spec)) match {
+          case JsSuccess(spec, path) =>
+            (spec.info, spec.answerInfo) match {
+              case (mci: MultipleChoiceInfo, mcgi: MultipleChoiceGradeInfo) =>
+                val fAnswers = db.run (Answer.filter(ar => ar.courseid === agr.courseid && ar.paaid === paa.id).result)
+                fAnswers.foreach { allAnswers =>
+                  for ((_, answers) <- allAnswers.groupBy(a => (a.userid, a.courseid, a.paaid))) checkMultipleChoice(answers.maxBy(_.id), mcgi)
+                }
+              case (di: DrawingInfo, dgi: DrawingGradeInfo) =>
+                val fAnswers = db.run (Answer.filter(ar => ar.courseid === agr.courseid && ar.paaid === paa.id).result)
+                fAnswers.foreach { allAnswers =>
+                  for ((_, answers) <- allAnswers.groupBy(a => (a.userid, a.courseid, a.paaid))) checkDrawing(answers.maxBy(_.id), di, dgi)
+                }
+              case _ =>
+            }
+          case JsError(e) =>
+            println("Error parsing spec from database. " + e)
+        }
+      }
+    }.map(_ => AutoGradeResponse("Done grading.", true)) // TODO: Change this to indicate success if possible.
+  }
+
+  def checkMultipleChoice(ans: AnswerRow, mcgi: MultipleChoiceGradeInfo): Unit = {
+    Json.fromJson[MultipleChoiceAnswer](Json.parse(ans.details)) match {
+      case JsSuccess(mca, path) =>
+        setGradeData(GradeData(-1, ans.userid, ans.courseid, ans.paaid, if (mca.answer == mcgi.correct) 100.0 else 0.0, "Autograded"))
+      case JsError(e) =>
+        println("Error parsing answer details from database. " + e)
+    }
+  }
+
+  def checkDrawing(ans: AnswerRow, di: DrawingInfo, dgi: DrawingGradeInfo): Unit = {
+    Json.fromJson[DrawingAnswer](Json.parse(ans.details)) match {
+      case JsSuccess(da, path) =>
+        val correct = DrawAnswerElement.checkEquals(di.initialElements, dgi.elements, da.elements)
+        setGradeData(GradeData(-1, ans.userid, ans.courseid, ans.paaid, if (correct) 100.0 else 0.0, "Autograded"))
+      case JsError(e) =>
+        println("Error parsing answer details from database. " + e)
+    }
   }
 }

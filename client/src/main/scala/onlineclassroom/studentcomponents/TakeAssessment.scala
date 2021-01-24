@@ -62,6 +62,34 @@ import scala.scalajs.js.Date
                 newsaa => setState(state.copy(problems = state.problems.patch(i, Seq(p.copy(answer = Some(newsaa))), 1))) ),
               hr()
             )
+          case (wfi: WriteFunctionInfo, wfa: Option[WriteFunctionAnswer]) =>
+            div ( key := i.toString,
+              h3 (s"Problem ${i+1}"),
+              WriteFunctionQuestion(props.userData, props.course, p.paaid, wfi, wfa, open, 
+                newsaa => setState(state.copy(problems = state.problems.patch(i, Seq(p.copy(answer = Some(newsaa))), 1))) ),
+              hr()
+            )
+          case (wei: WriteExpressionInfo, wea: Option[WriteExpressionAnswer]) =>
+            div ( key := i.toString,
+              h3 (s"Problem ${i+1}"),
+              WriteExpressionQuestion(props.userData, props.course, p.paaid, wei, wea, open, 
+                newsaa => setState(state.copy(problems = state.problems.patch(i, Seq(p.copy(answer = Some(newsaa))), 1))) ),
+              hr()
+            )
+          case (wli: WriteLambdaInfo, wla: Option[WriteLambdaAnswer]) =>
+            div ( key := i.toString,
+              h3 (s"Problem ${i+1}"),
+              WriteLambdaQuestion(props.userData, props.course, p.paaid, wli, wla, open, 
+                newsaa => setState(state.copy(problems = state.problems.patch(i, Seq(p.copy(answer = Some(newsaa))), 1))) ),
+              hr()
+            )
+          case (di: DrawingInfo, da: Option[DrawingAnswer]) =>
+            div ( key := i.toString,
+              h3 (s"Problem ${i+1}"),
+              DrawingQuestion(props.userData, props.course, p.paaid, di, da, open, 
+                newsaa => setState(state.copy(problems = state.problems.patch(i, Seq(p.copy(answer = Some(newsaa))), 1))) ),
+              hr()
+            )
         }
       },
       button ("Done", onClick := (e => props.exitFunc()))

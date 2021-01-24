@@ -2,10 +2,10 @@ package onlineclassroom
 
 object AutoGradeOptions {
   val Never = 0
-  val OnProblemSubmit = 1
+  val OnInstructor = 1
   val OnTestSubmit = 2
-  val asString = Array("Never", "Problem Submit", "Test Submit")
-  val fromString = Map("Never" -> Never, "Problem Submit" -> OnProblemSubmit, "Test Submit" -> OnTestSubmit)
+  val asString = Array("Never", "Instructor", "Test Submit")
+  val fromString = Map("Never" -> Never, "Instructor" -> OnInstructor, "Test Submit" -> OnTestSubmit)
 }
 
 case class LoginData(username: String, password: String)
@@ -39,9 +39,9 @@ case class AssessmentData(id: Int, name: String, description: String, autoGrade:
 sealed trait ProblemAnswer
 case class MultipleChoiceAnswer(answer: Int) extends ProblemAnswer
 case class ShortAnswerAnswer(text: String, elements: Seq[DrawAnswerElement]) extends ProblemAnswer
-case class WriteFunctionAnswer(code: String) extends ProblemAnswer
-case class WriteLambdaAnswer(code: String) extends ProblemAnswer
-case class WriteExpressionAnswer(code: String) extends ProblemAnswer
+case class WriteFunctionAnswer(code: String, passed: Boolean) extends ProblemAnswer
+case class WriteLambdaAnswer(code: String, passed: Boolean) extends ProblemAnswer
+case class WriteExpressionAnswer(code: String, passed: Boolean) extends ProblemAnswer
 case class DrawingAnswer(elements: Seq[DrawAnswerElement]) extends ProblemAnswer
 case class ManualEntryAnswer(requiredForJson: Int = -1) extends ProblemAnswer
 case class ProblemAnswerError(error: String) extends ProblemAnswer
@@ -90,13 +90,7 @@ case class WriteExpressionGradeInfo(correctCode: String, numRuns: Int) extends P
   def autoGradable: Boolean = true
 }
 
-// My current thought here is that each entry has the label on a ref that links to a nested structure that
-// indicates what should be pointed to. For example:
-// root -> D 5 (D 3 (D 2) (D 4)) (D 7 (D 6) (D 9)) -- for a binary tree
-// head -> S 3 (S 2 (S 1))
-// arr -> A 1 2 3 4 5
-// arr -> A (V 32) (V 42)
-case class DrawingGradeInfo(structs: Seq[(String, String)]) extends ProblemGradeInfo {
+case class DrawingGradeInfo(elements: Seq[DrawAnswerElement]) extends ProblemGradeInfo {
   def autoGradable: Boolean = true
 }
 
@@ -130,3 +124,8 @@ case class SaveAnswerInfo(id: Int, userid: Int, courseid: Int, paaid: Int, answe
 
 case class ProblemAssessmentAssociation(id: Int, assessmentid: Int, problemid: Int, weight: Double, extraCredit: Boolean)
 
+case class CodeSubmitResponse(message: String, correct: Boolean)
+
+case class AutoGradeRequest(courseid: Int, assessmentid: Int)
+
+case class AutoGradeResponse(message: String, success: Boolean)

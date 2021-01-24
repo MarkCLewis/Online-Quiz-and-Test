@@ -14,6 +14,7 @@ trait OCModel {
   def studentGradeData(userid: Int, courseid: Int): Future[FullStudentData]
   def courseStudentGradeData(courseid: Int, instructorid: Int): Future[Seq[FullStudentData]]
   def saveOrCreateProblem(spec: ProblemSpec, userid: Int): Future[Int]
+  def oneProblemFromPAAID(paaid: Int): Future[Option[ProblemSpec]]
   def allProblems(): Future[Seq[ProblemSpec]]
   def saveOrCreateAssessment(ad: AssessmentData, userid: Int): Future[Int]
   def allAssessments(): Future[Seq[AssessmentData]]
@@ -36,4 +37,5 @@ trait OCModel {
   def getFormulas(courseid: Int): Future[Seq[GradeFormulaInfo]]
   def studentAssessmentGradingData(userid: Int, courseid: Int, assessmentid: Int): Future[AssessmentGradingData]
   def getInstructors(): Future[Seq[UserData]]
+  def autoGrade(agr: AutoGradeRequest): Future[AutoGradeResponse]
 }
