@@ -126,7 +126,7 @@ object InstructorPageMode extends Enumeration {
     case InstructorPageMode.DisplayCourse =>
       ViewCourse(props.userData, state.courses(state.selectedIndex), state.assessments, () => setState(state.copy(mode = InstructorPageMode.TopPage)))
     case InstructorPageMode.DisplayCourseSummary =>
-      ViewCourseSummary(props.userData, state.courses(state.selectedIndex), state.assessments, () => setState(state.copy(mode = InstructorPageMode.TopPage)))
+      ViewCourseSummary(props.userData, state.courses(state.selectedIndex), () => setState(state.copy(mode = InstructorPageMode.TopPage)))
     case InstructorPageMode.EditProblem =>
       EditProblem(state.editType, state.selectedProblem, () => setState(state.copy(mode = InstructorPageMode.TopPage)), () => loadProblems())
     case InstructorPageMode.EditAssessment =>

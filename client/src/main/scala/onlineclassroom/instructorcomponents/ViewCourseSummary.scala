@@ -15,44 +15,54 @@ object InstructorCourseSummaryViewModes extends Enumeration {
 }
 
 @react class ViewCourseSummary extends Component {
-  case class Props(userData: UserData, course: CourseData, allAssessments: Seq[AssessmentData], exitFunc: () => Unit)
-  case class State(message: String, mode: InstructorCourseSummaryViewModes.Value, gradeData: Option[AssessmentGradingData], 
-    selectedAssessment: Option[AssessmentData])
+  case class Props(userData: UserData, course: CourseData, exitFunc: () => Unit)
+  case class State(message: String, mode: InstructorCourseSummaryViewModes.Value, courseGradeInfo: Option[CourseGradeInformation],
+    gradeData: Option[AssessmentGradingData], selectedAssessment: Option[AssessmentCourseInfo])
 
-  def initialState: State = State("", InstructorCourseSummaryViewModes.Normal, None, None)
+  def initialState: State = State("", InstructorCourseSummaryViewModes.Normal, None, None, None)
+
+  override def componentDidMount() = {
+    loadCourseGradeInformation()
+  }
 
   override def componentDidUpdate(prevProps: Props, prevState: State): Unit = {
     if (prevState.selectedAssessment != state.selectedAssessment) {
-      loadData()
+      loadDataAssessment()
     }
   }
 
   def render: ReactElement = {
     state.mode match {
       case InstructorCourseSummaryViewModes.Normal =>
-        div (
-          // Table listing assessment data.
-          table (
-            thead (
-              tr ( th ("Assessment"), th ("Auto Grade"))
-            ),
-            tbody (
-              props.allAssessments.map { ad =>
-                println(ad)
-                tr ( key := s"key-${ad.id}",
-                  td ( ad.name,
-                    onClick := (e => setState(state.copy(mode = InstructorCourseSummaryViewModes.Summary, selectedAssessment = Some(ad))))
-                  ),
-                  td ( if (ad.autoGrade == AutoGradeOptions.OnInstructor) {
-                    span ("Grade", onClick := (e => autoGrade(ad.id)))
-                  } else "")
+        state.courseGradeInfo match {
+          case None => div (
+            "Loading data...",
+            button ("Done", onClick := (e => props.exitFunc()))
+          )
+          case Some(cgi) =>
+            div (
+              // Table listing assessment data.
+              table (
+                thead (
+                  tr ( th ("Assessment"), th ("Auto Grade"))
+                ),
+                tbody (
+                  cgi.assessments.map { aci =>
+                    tr ( key := s"key-${aci.id}",
+                      td ( aci.name,
+                        onClick := (e => setState(state.copy(mode = InstructorCourseSummaryViewModes.Summary, selectedAssessment = Some(aci))))
+                      ),
+                      td ( if (aci.autoGrade == AutoGradeOptions.OnInstructor) {
+                        span ("Grade", onClick := (e => autoGrade(aci.id)))
+                      } else "")
+                    )
+                  }
                 )
-              }
+              ),
+              state.message,
+              button ("Done", onClick := (e => props.exitFunc()))
             )
-          ),
-          state.message,
-          button ("Done", onClick := (e => props.exitFunc()))
-        )
+        }
       case InstructorCourseSummaryViewModes.Summary =>
         state.gradeData match {
           case None =>
@@ -105,8 +115,13 @@ object InstructorCourseSummaryViewModes extends Enumeration {
 
   implicit val ec = ExecutionContext.global
 
-  def loadData(): Unit = {
-    println("Loading data")
+  def loadCourseGradeInformation(): Unit = {
+    PostFetch.fetch("/getInstructorCourseData", props.course.id,
+      (ficd: FullInstructorCourseData) => setState(state.copy(courseGradeInfo = Some(ficd.grades))),
+      e => { println(e); setState(state.copy(message = "Error with JSON loading data."))})
+  }
+
+  def loadDataAssessment(): Unit = {
     state.selectedAssessment.foreach(sa =>
       PostFetch.fetch("/assessmentGradingData", (props.course.id, sa.id),
         (agd: AssessmentGradingData) => {println("Data loaded."); setState(state.copy(gradeData = Some(agd)))},
