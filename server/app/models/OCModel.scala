@@ -38,4 +38,5 @@ trait OCModel {
   def studentAssessmentGradingData(userid: Int, courseid: Int, assessmentid: Int): Future[AssessmentGradingData]
   def getInstructors(): Future[Seq[UserData]]
   def autoGrade(agr: AutoGradeRequest): Future[AutoGradeResponse]
+  def updateActive(courseid: Int, newActive: Boolean): Future[Int]
 }

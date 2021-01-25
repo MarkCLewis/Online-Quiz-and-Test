@@ -39,6 +39,7 @@ POST       /getFormulas                  controllers.Application.getFormulas
 POST       /studentAssessmentGradingData controllers.Application.studentAssessmentGradingData
 POST       /getInstructors               controllers.Application.getInstructors
 POST       /autoGrade                    controllers.Application.autoGrade
+POST       /updateActive                 controllers.Application.updateActive
 
 # WebSocket Call
 GET        /submitSocket                 controllers.Application.submitSocket

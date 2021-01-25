@@ -23,7 +23,7 @@ trait Tables {
    *  @param userid Database column userid SqlType(int4)
    *  @param courseid Database column courseid SqlType(int4)
    *  @param paaid Database column paaid SqlType(int4)
-   *  @param submitTime Database column submit_time SqlType(timestamp without time zone)
+   *  @param submitTime Database column submit_time SqlType(timestamp)
    *  @param details Database column details SqlType(varchar), Length(20000,true) */
   case class AnswerRow(id: Int, userid: Int, courseid: Int, paaid: Int, submitTime: java.sql.Timestamp, details: String)
   /** GetResult implicit for fetching AnswerRow objects using plain SQL queries */
@@ -45,7 +45,7 @@ trait Tables {
     val courseid: Rep[Int] = column[Int]("courseid")
     /** Database column paaid SqlType(int4) */
     val paaid: Rep[Int] = column[Int]("paaid")
-    /** Database column submit_time SqlType(timestamp without time zone) */
+    /** Database column submit_time SqlType(timestamp) */
     val submitTime: Rep[java.sql.Timestamp] = column[java.sql.Timestamp]("submit_time")
     /** Database column details SqlType(varchar), Length(20000,true) */
     val details: Rep[String] = column[String]("details", O.Length(20000,varying=true))
@@ -92,12 +92,12 @@ trait Tables {
     /** Database column comments SqlType(varchar), Length(200,true) */
     val comments: Rep[String] = column[String]("comments", O.Length(200,varying=true))
 
-    /** Foreign key referencing Course (database name answer_grade_copy_courseid_fkey) */
-    lazy val courseFk = foreignKey("answer_grade_copy_courseid_fkey", courseid, Course)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.Cascade)
-    /** Foreign key referencing ProblemAssessmentAssoc (database name answer_grade_copy_paaid_fkey) */
-    lazy val problemAssessmentAssocFk = foreignKey("answer_grade_copy_paaid_fkey", paaid, ProblemAssessmentAssoc)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.Cascade)
-    /** Foreign key referencing Users (database name answer_grade_copy_userid_fkey) */
-    lazy val usersFk = foreignKey("answer_grade_copy_userid_fkey", userid, Users)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.Cascade)
+    /** Foreign key referencing Course (database name answer_grade_courseid_fkey) */
+    lazy val courseFk = foreignKey("answer_grade_courseid_fkey", courseid, Course)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.Cascade)
+    /** Foreign key referencing ProblemAssessmentAssoc (database name answer_grade_paaid_fkey) */
+    lazy val problemAssessmentAssocFk = foreignKey("answer_grade_paaid_fkey", paaid, ProblemAssessmentAssoc)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.Cascade)
+    /** Foreign key referencing Users (database name answer_grade_userid_fkey) */
+    lazy val usersFk = foreignKey("answer_grade_userid_fkey", userid, Users)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.Cascade)
   }
   /** Collection-like TableQuery object for table AnswerGrade */
   lazy val AnswerGrade = new TableQuery(tag => new AnswerGrade(tag))
@@ -128,8 +128,8 @@ trait Tables {
     val description: Rep[String] = column[String]("description", O.Length(2000,varying=true))
     /** Database column auto_grade SqlType(int4) */
     val autoGrade: Rep[Int] = column[Int]("auto_grade")
-    /** Database column creatorid SqlType(int4), Default(27) */
-    val creatorid: Rep[Int] = column[Int]("creatorid", O.Default(27))
+    /** Database column creatorid SqlType(int4) */
+    val creatorid: Rep[Int] = column[Int]("creatorid")
 
     /** Foreign key referencing Users (database name assessment_creatorid_fkey) */
     lazy val usersFk = foreignKey("assessment_creatorid_fkey", creatorid, Users)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.Cascade)
@@ -144,8 +144,8 @@ trait Tables {
    *  @param points Database column points SqlType(int4)
    *  @param gradeGroup Database column grade_group SqlType(varchar), Length(20,true)
    *  @param autoGrade Database column auto_grade SqlType(int4)
-   *  @param startTime Database column start_time SqlType(timestamp without time zone), Default(None)
-   *  @param endTime Database column end_time SqlType(timestamp without time zone), Default(None)
+   *  @param startTime Database column start_time SqlType(timestamp), Default(None)
+   *  @param endTime Database column end_time SqlType(timestamp), Default(None)
    *  @param timeLimit Database column time_limit SqlType(int4), Default(None) */
   case class AssessmentCourseAssocRow(id: Int, courseid: Int, assessmentid: Int, points: Int, gradeGroup: String, autoGrade: Int, startTime: Option[java.sql.Timestamp] = None, endTime: Option[java.sql.Timestamp] = None, timeLimit: Option[Int] = None)
   /** GetResult implicit for fetching AssessmentCourseAssocRow objects using plain SQL queries */
@@ -171,9 +171,9 @@ trait Tables {
     val gradeGroup: Rep[String] = column[String]("grade_group", O.Length(20,varying=true))
     /** Database column auto_grade SqlType(int4) */
     val autoGrade: Rep[Int] = column[Int]("auto_grade")
-    /** Database column start_time SqlType(timestamp without time zone), Default(None) */
+    /** Database column start_time SqlType(timestamp), Default(None) */
     val startTime: Rep[Option[java.sql.Timestamp]] = column[Option[java.sql.Timestamp]]("start_time", O.Default(None))
-    /** Database column end_time SqlType(timestamp without time zone), Default(None) */
+    /** Database column end_time SqlType(timestamp), Default(None) */
     val endTime: Rep[Option[java.sql.Timestamp]] = column[Option[java.sql.Timestamp]]("end_time", O.Default(None))
     /** Database column time_limit SqlType(int4), Default(None) */
     val timeLimit: Rep[Option[Int]] = column[Option[Int]]("time_limit", O.Default(None))
@@ -190,7 +190,7 @@ trait Tables {
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param userid Database column userid SqlType(int4)
    *  @param acaid Database column acaid SqlType(int4)
-   *  @param timeStarted Database column time_started SqlType(timestamp without time zone) */
+   *  @param timeStarted Database column time_started SqlType(timestamp) */
   case class AssessmentStartTimeRow(id: Int, userid: Int, acaid: Int, timeStarted: java.sql.Timestamp)
   /** GetResult implicit for fetching AssessmentStartTimeRow objects using plain SQL queries */
   implicit def GetResultAssessmentStartTimeRow(implicit e0: GR[Int], e1: GR[java.sql.Timestamp]): GR[AssessmentStartTimeRow] = GR{
@@ -209,7 +209,7 @@ trait Tables {
     val userid: Rep[Int] = column[Int]("userid")
     /** Database column acaid SqlType(int4) */
     val acaid: Rep[Int] = column[Int]("acaid")
-    /** Database column time_started SqlType(timestamp without time zone) */
+    /** Database column time_started SqlType(timestamp) */
     val timeStarted: Rep[java.sql.Timestamp] = column[java.sql.Timestamp]("time_started")
 
     /** Foreign key referencing AssessmentCourseAssoc (database name assessment_start_time_acaid_fkey) */
@@ -224,18 +224,19 @@ trait Tables {
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param name Database column name SqlType(varchar), Length(20,true)
    *  @param semester Database column semester SqlType(varchar), Length(4,true)
-   *  @param section Database column section SqlType(int4) */
-  case class CourseRow(id: Int, name: String, semester: String, section: Int)
+   *  @param section Database column section SqlType(int4)
+   *  @param active Database column active SqlType(bool) */
+  case class CourseRow(id: Int, name: String, semester: String, section: Int, active: Boolean)
   /** GetResult implicit for fetching CourseRow objects using plain SQL queries */
-  implicit def GetResultCourseRow(implicit e0: GR[Int], e1: GR[String]): GR[CourseRow] = GR{
+  implicit def GetResultCourseRow(implicit e0: GR[Int], e1: GR[String], e2: GR[Boolean]): GR[CourseRow] = GR{
     prs => import prs._
-    CourseRow.tupled((<<[Int], <<[String], <<[String], <<[Int]))
+    CourseRow.tupled((<<[Int], <<[String], <<[String], <<[Int], <<[Boolean]))
   }
   /** Table description of table course. Objects of this class serve as prototypes for rows in queries. */
   class Course(_tableTag: Tag) extends profile.api.Table[CourseRow](_tableTag, "course") {
-    def * = (id, name, semester, section) <> (CourseRow.tupled, CourseRow.unapply)
+    def * = (id, name, semester, section, active) <> (CourseRow.tupled, CourseRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = ((Rep.Some(id), Rep.Some(name), Rep.Some(semester), Rep.Some(section))).shaped.<>({r=>import r._; _1.map(_=> CourseRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = ((Rep.Some(id), Rep.Some(name), Rep.Some(semester), Rep.Some(section), Rep.Some(active))).shaped.<>({r=>import r._; _1.map(_=> CourseRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -245,6 +246,8 @@ trait Tables {
     val semester: Rep[String] = column[String]("semester", O.Length(4,varying=true))
     /** Database column section SqlType(int4) */
     val section: Rep[Int] = column[Int]("section")
+    /** Database column active SqlType(bool) */
+    val active: Rep[Boolean] = column[Boolean]("active")
   }
   /** Collection-like TableQuery object for table Course */
   lazy val Course = new TableQuery(tag => new Course(tag))
@@ -301,8 +304,8 @@ trait Tables {
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
     /** Database column spec SqlType(varchar), Length(20000,true) */
     val spec: Rep[String] = column[String]("spec", O.Length(20000,varying=true))
-    /** Database column creatorid SqlType(int4), Default(27) */
-    val creatorid: Rep[Int] = column[Int]("creatorid", O.Default(27))
+    /** Database column creatorid SqlType(int4) */
+    val creatorid: Rep[Int] = column[Int]("creatorid")
 
     /** Foreign key referencing Users (database name problem_creatorid_fkey) */
     lazy val usersFk = foreignKey("problem_creatorid_fkey", creatorid, Users)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.Cascade)

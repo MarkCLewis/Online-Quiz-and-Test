@@ -11,7 +11,7 @@ object AutoGradeOptions {
 case class LoginData(username: String, password: String)
 case class NewCourseData(name:String, semester:String, section:Int, studentData:String)
 
-case class CourseData(id: Int, name: String, semester: String, section: Int)
+case class CourseData(id: Int, name: String, semester: String, section: Int, active: Boolean)
 
 case class UserData(username: String, id: Int, instructor: Boolean)
 case class PasswordChangeData(userid: Int, oldPassword: String, newPassword: String)
@@ -30,7 +30,7 @@ case class AssessmentGradingData(id: Int, name: String, description: String, pro
 
 case class StudentAssessmentStart(id: Int, userid: Int, aciid: Int, timeStarted: String)
 
-case class AssessmentData(id: Int, name: String, description: String, autoGrade: Int)
+case class AssessmentData(id: Int, name: String, description: String, autoGrade: Int, creatorid: Int)
 
 /**
  * The subtypes of ProblemAnswer are passed back from the client to the server with the user's answer.
@@ -101,7 +101,7 @@ case class ManualEntryGradeInfo(requiredForJson: Int = -1) extends ProblemGradeI
  * ProblemSpec is passed between client and server when an instructor is editing them. They
  * contain the full information needed to run the problem.
  */
-case class ProblemSpec(id: Int, info: ProblemInfo, answerInfo: ProblemGradeInfo) {
+case class ProblemSpec(id: Int, info: ProblemInfo, answerInfo: ProblemGradeInfo, creatorid: Option[Int]) {
   def specType: String = (info, answerInfo) match {
     case (_:ShortAnswerInfo, _:ShortAnswerGradeInfo) => "Short Answer"
     case (_:MultipleChoiceInfo, _:MultipleChoiceGradeInfo) => "Multiple Choice"
@@ -115,8 +115,6 @@ case class ProblemSpec(id: Int, info: ProblemInfo, answerInfo: ProblemGradeInfo)
       "Mismatch"
   }
 }
-
-// case class ProblemSpecWithAnswers(id: Int, )
 
 case class StudentProblemSpec(paaid: Int, assessmentid: Int, problemid: Int, weight: Double, extraCredit: Boolean, info: ProblemInfo, answer: Option[ProblemAnswer])
 

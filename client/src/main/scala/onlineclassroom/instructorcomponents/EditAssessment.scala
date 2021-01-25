@@ -13,18 +13,20 @@ import onlineclassroom._
 import onlineclassroom.ReadsAndWrites._
 
 @react class EditAssessment extends Component {
-  case class Props(assessmentData: Option[AssessmentData], allProblems: Seq[ProblemSpec], exitFunc: () => Unit, realoadAssessmentsFunc: () => Unit)
-  case class State(message: String, ad: AssessmentData, problemAssocs: Seq[ProblemAssessmentAssociation])
+  case class Props(userData: UserData, assessmentData: Option[AssessmentData], allProblems: Seq[ProblemSpec], exitFunc: () => Unit, realoadAssessmentsFunc: () => Unit)
+  case class State(message: String, ad: AssessmentData, problemAssocs: Seq[ProblemAssessmentAssociation],
+    problemFilter: String, problemCreatorMatch: Boolean)
 
   def initialState: State = State("", props.assessmentData match {
     case Some(ad) => ad
-    case None => AssessmentData(-1, "", "", AutoGradeOptions.Never)
-  }, Nil)
+    case None => AssessmentData(-1, "", "", AutoGradeOptions.Never, props.userData.id)
+  }, Nil, "", true)
 
   override def componentDidMount(): Unit = loadAssociatedProblems()
 
   def render: ReactElement = {
     val allProbsMap = props.allProblems.map(ps => ps.id -> ps).toMap
+    val problemFilterRegex = try { state.problemFilter.r } catch { case ex: Exception => ".*".r }
     div(
       h3 ("Edit Assessment"),
       "Name:",
@@ -48,9 +50,17 @@ import onlineclassroom.ReadsAndWrites._
       "Add Problem: ",
       select (
         option (value := "-1", "Select to add"),
-        props.allProblems.zipWithIndex.map { case (pspec, i) => option (key := i.toString, value := pspec.id.toString, pspec.info.name) },
+        props.allProblems.filter(p => 
+                problemFilterRegex.findFirstIn(p.info.name+p.info.prompt).nonEmpty && 
+                (!state.problemCreatorMatch || p.creatorid.forall(_ == props.userData.id))).
+            zipWithIndex.map { case (pspec, i) => option (key := i.toString, value := pspec.id.toString, pspec.info.name) },
         onChange := (e => if(e.target.value != "-1") updateProblemAssessmentAssoc(ProblemAssessmentAssociation(-1, state.ad.id, e.target.value.toInt, 1.0, false), -1))
       ),
+      input (`type` := "text", value := state.problemFilter,
+        onChange := (e => setState(state.copy(problemFilter = e.target.value)))),
+      ", Only mine:",
+      input (`type` := "checkbox", checked := state.problemCreatorMatch,
+        onChange := (e => setState(state.copy(problemCreatorMatch = e.target.checked)))),
       table (
         thead ( tr ( th("Name"), th("Weight"), th("Extra Credit"), th())),
         tbody (

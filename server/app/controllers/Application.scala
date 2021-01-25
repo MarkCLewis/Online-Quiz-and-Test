@@ -269,6 +269,12 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
     }
   }
 
+  def updateActive = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[(Int, Boolean)] { case (courseid, newActive) =>
+      model.updateActive(courseid, newActive).map(resp => Ok(Json.toJson(resp)))
+    }
+  }
+
   def submitSocket = WebSocket.accept[JsValue, JsValue] { request =>
     println("Request for socket " + request)
     ActorFlow.actorRef { out =>

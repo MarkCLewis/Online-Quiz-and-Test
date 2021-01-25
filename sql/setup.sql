@@ -16,7 +16,8 @@ CREATE TABLE course (
   id SERIAL PRIMARY KEY,
   name varchar(20) NOT NULL,
   semester varchar(4) NOT NULL,
-  section int NOT NULL
+  section int NOT NULL,
+  active boolean NOT NULL
 );
 
 CREATE TABLE grade_formula (
@@ -129,3 +130,10 @@ ALTER TABLE answer_grade RENAME TO answer_grade_old;
 ALTER TABLE answer_grade_copy RENAME TO answer_grade;
 
 DROP TABLE answer_grade_old;
+
+/**
+ * Adding an active flag to the courses so I can prevent students from seeing questions in old courses.
+ */
+ALTER TABLE course ADD COLUMN active boolean;
+UPDATE course SET active = true;
+ALTER TABLE course ALTER COLUMN active SET NOT NULL;

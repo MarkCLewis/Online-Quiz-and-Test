@@ -14,19 +14,19 @@ import onlineclassroom._
 import onlineclassroom.ReadsAndWrites._
 
 @react class EditProblem extends Component {
-  case class Props(editType: String, problemSpec: Option[ProblemSpec], exitFunc: () => Unit, realoadProblemsFunc: () => Unit)
+  case class Props(userData: UserData, editType: String, problemSpec: Option[ProblemSpec], exitFunc: () => Unit, realoadProblemsFunc: () => Unit)
   case class State(message: String, problemSpec: ProblemSpec)
 
   def initialState: State = State("", props.problemSpec match {
     case Some(ps) => ps
     case None =>
       props.editType match {
-        case "SA" => ProblemSpec(-1, ShortAnswerInfo("", "", Nil), ShortAnswerGradeInfo(0))
-        case "MC" => ProblemSpec(-1, MultipleChoiceInfo("", "", Nil), MultipleChoiceGradeInfo(0))
-        case "Func" => ProblemSpec(-1, WriteFunctionInfo("", "", "", Nil), WriteFunctionGradeInfo("", 10))
-        case "Expr" => ProblemSpec(-1, WriteExpressionInfo("", "", Nil, ""), WriteExpressionGradeInfo("", 10))
-        case "Lambda" => ProblemSpec(-1, WriteLambdaInfo("", "", "", Nil), WriteLambdaGradeInfo("", 10))
-        case "Drawing" => ProblemSpec(-1, DrawingInfo("", "", Nil), DrawingGradeInfo(Nil))
+        case "SA" => ProblemSpec(-1, ShortAnswerInfo("", "", Nil), ShortAnswerGradeInfo(0), Some(props.userData.id))
+        case "MC" => ProblemSpec(-1, MultipleChoiceInfo("", "", Nil), MultipleChoiceGradeInfo(0), Some(props.userData.id))
+        case "Func" => ProblemSpec(-1, WriteFunctionInfo("", "", "", Nil), WriteFunctionGradeInfo("", 10), Some(props.userData.id))
+        case "Expr" => ProblemSpec(-1, WriteExpressionInfo("", "", Nil, ""), WriteExpressionGradeInfo("", 10), Some(props.userData.id))
+        case "Lambda" => ProblemSpec(-1, WriteLambdaInfo("", "", "", Nil), WriteLambdaGradeInfo("", 10), Some(props.userData.id))
+        case "Drawing" => ProblemSpec(-1, DrawingInfo("", "", Nil), DrawingGradeInfo(Nil), Some(props.userData.id))
       }
   })
 

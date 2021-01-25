@@ -56,6 +56,7 @@ object CourseViewMode extends Enumeration {
           "Server Time:",
           state.serverTime.toLocaleString(),
           br(),
+          if (!props.course.active) h2 ("This course is no long active. You can't see individual assessments.") else "",
           h3 ("Assessments"),
           "Click an assessment name to start that assessment. You can only reach assessments here when they are open. To see assessments after you are done use the grades table below.",
           br(),
@@ -67,7 +68,7 @@ object CourseViewMode extends Enumeration {
                 val end = aci.end.getOrElse("None")
                 val limit = aci.timeLimit.map(limit => if (state.multiplier != 1.0) s"$limit x ${state.multiplier}" else limit.toString).getOrElse("None")
                 tr ( key := i.toString, 
-                  td (aci.name, onClick := (e => if (TimeMethods.assessmentOpen(aci, startMap.get(aci.id), state.serverTime, state.multiplier)) setState(state.copy(mode = CourseViewMode.TakeAssessment, selectedAssessment = Some(aci))))), 
+                  td (aci.name, onClick := (e => if (props.course.active && TimeMethods.assessmentOpen(aci, startMap.get(aci.id), state.serverTime, state.multiplier)) setState(state.copy(mode = CourseViewMode.TakeAssessment, selectedAssessment = Some(aci))))), 
                   td (start),
                   td (end),
                   td (limit),
@@ -91,7 +92,7 @@ object CourseViewMode extends Enumeration {
                   val rows: Seq[ReactElement] = groups.zipWithIndex.flatMap { case (g, j) => 
                     groupRows(g).zipWithIndex.map { case (rowHead, k) => 
                       tr (key := (j*100+k).toString, 
-                        td (rowHead, onClick := (e => if (aciByName.contains(rowHead) && TimeMethods.assessmentViewable(aciByName(rowHead), startMap.get(aciByName(rowHead).id), state.serverTime)) setState(state.copy(mode = CourseViewMode.ViewAssessment, selectedAssessment = aciByName.get(rowHead))))),
+                        td (rowHead, onClick := (e => if (props.course.active && aciByName.contains(rowHead) && TimeMethods.assessmentViewable(aciByName(rowHead), startMap.get(aciByName(rowHead).id), state.serverTime)) setState(state.copy(mode = CourseViewMode.ViewAssessment, selectedAssessment = aciByName.get(rowHead))))),
                         td (g),
                         td (if (fsd.grades.contains(rowHead)) fsd.grades(rowHead) else Formulas.calcFormula(fsd.grades, formulaMap.get(g).getOrElse(""))))
                     }

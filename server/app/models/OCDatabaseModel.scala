@@ -56,7 +56,7 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
       } yield {
         cr
       }).result
-    ).map(courseRows => for (cr <- courseRows) yield CourseData(cr.id, cr.name, cr.semester, cr.section))
+    ).map(courseRows => for (cr <- courseRows) yield CourseData(cr.id, cr.name, cr.semester, cr.section, cr.active))
   }
 
   def addUserToCourse(userid: Int, courseid: Int): Future[Boolean] = ???
@@ -64,7 +64,7 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
   def addCourse(ncd:NewCourseData, userid:Int): Future[Boolean] = {
     val StudentRegex = """(\d{7})|(\w{2,8}@\w+\.edu)""".r
     // Create course entry
-    db.run(Course += CourseRow(0,ncd.name,ncd.semester,ncd.section)).flatMap { cnt =>
+    db.run(Course += CourseRow(0,ncd.name,ncd.semester,ncd.section, true)).flatMap { cnt =>
       if(cnt>0) {
         db.run(Course.filter(cr => cr.name === ncd.name && cr.semester === ncd.semester && cr.section === ncd.section).result.head).flatMap(cr => {
           for {
@@ -157,7 +157,11 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
 
   def saveOrCreateProblem(spec: ProblemSpec, userid: Int): Future[Int] = {
     if (spec.id < 0) {
-      db.run(Problem += ProblemRow(-1, Json.toJson(spec).toString, userid)).flatMap(num => db.run(Problem.map(_.id).max.result)).map(_.getOrElse(-1))
+      val fMaxId = db.run(Problem.map(_.id).max.result)
+      fMaxId.flatMap { maxId =>
+        val id = maxId.map(_ + 1).getOrElse(0)
+        db.run(Problem += ProblemRow(id, Json.toJson(spec.copy(id = id)).toString, userid)).map(num => id)
+      }
     } else {
       db.run(Problem.filter(_.id === spec.id).update(ProblemRow(spec.id, Json.toJson(spec).toString, userid))).map(_ => spec.id)
     }
@@ -167,9 +171,9 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
     db.run(ProblemAssessmentAssoc.filter(_.id === paaid).join(Problem).on(_.problemid === _.id).result).map(prs => prs.flatMap { case (_, pr) => 
       Json.fromJson[ProblemSpec](Json.parse(pr.spec)) match {
         case JsSuccess(ps, path) =>
-          Some(ProblemSpec(pr.id, ps.info, ps.answerInfo))
+          Some(ProblemSpec(pr.id, ps.info, ps.answerInfo, Some(pr.creatorid)))
         case e@JsError(_) => 
-          println("Error parsing spec for problem " + pr)
+          println("Error parsing spec for problem " + pr + "\n" + e)
           None
       }
     }.headOption)
@@ -179,9 +183,9 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
     db.run(Problem.result).map(prs => prs.flatMap { pr => 
       Json.fromJson[ProblemSpec](Json.parse(pr.spec)) match {
         case JsSuccess(ps, path) =>
-          Some(ProblemSpec(pr.id, ps.info, ps.answerInfo))
+          Some(ProblemSpec(pr.id, ps.info, ps.answerInfo, Some(pr.creatorid)))
         case e@JsError(_) => 
-          println("Error parsing spec for problem " + pr)
+          println("Error parsing spec for problem " + pr + "\n" + e)
           None
       }
     })
@@ -196,7 +200,7 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
   }
 
   def allAssessments(): Future[Seq[AssessmentData]] = {
-    db.run(Assessment.result).map(arows => arows.map(arow => AssessmentData(arow.id, arow.name, arow.description, arow.autoGrade)))
+    db.run(Assessment.result).map(arows => arows.map(arow => AssessmentData(arow.id, arow.name, arow.description, arow.autoGrade, arow.creatorid)))
   }
 
   def associatedProblems(assessmentid: Int): Future[Seq[ProblemAssessmentAssociation]] = {
@@ -341,7 +345,9 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
                 answers <- getAnswers(courseid, paa)
                 grades <- getGrades(courseid, paa)
               } yield {
-                GradingProblemData(problem.id, paa.id, Json.fromJson[ProblemSpec](Json.parse(problem.spec)).asOpt.getOrElse{println(s"info error with: ${problem.spec}"); ProblemSpec(-1, ProblemInfoError("Info error", problem.spec), null)}, answers, grades)
+                GradingProblemData(problem.id, paa.id, Json.fromJson[ProblemSpec](Json.parse(problem.spec)).asOpt.getOrElse{
+                  println(s"info error with: ${problem.spec}"); ProblemSpec(-1, ProblemInfoError("Info error", problem.spec), null, Some(problem.creatorid))
+                }.copy(id = problem.id), answers, grades)
               }
             }.toSeq)
           fproblems.map(problems => AssessmentGradingData(assessment.id, assessment.name, assessment.description, problems.sortBy(_.id), students))
@@ -403,7 +409,9 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
                 answers <- getStudentAnswers(userid,courseid, paa)
                 grades <- getStudentGrades(userid,courseid, paa)
               } yield {
-                GradingProblemData(problem.id, paa.id, Json.fromJson[ProblemSpec](Json.parse(problem.spec)).asOpt.getOrElse{println(s"info error with: ${problem.spec}"); ProblemSpec(-1, ProblemInfoError("Info error", problem.spec), null)}, answers, grades)
+                GradingProblemData(problem.id, paa.id, Json.fromJson[ProblemSpec](Json.parse(problem.spec)).asOpt.getOrElse{
+                  println(s"info error with: ${problem.spec}"); ProblemSpec(-1, ProblemInfoError("Info error", problem.spec), null, Some(problem.creatorid))
+                }.copy(id = problem.id), answers, grades)
               }
             }.toSeq)
           fproblems.map(problems => AssessmentGradingData(assessment.id, assessment.name, assessment.description, problems.sortBy(_.id), Nil))
@@ -467,5 +475,9 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
       case JsError(e) =>
         println("Error parsing answer details from database. " + e)
     }
+  }
+
+  def updateActive(courseid: Int, newActive: Boolean): Future[Int] = {
+    db.run(Course.filter(_.id === courseid).map(_.active).update(newActive))
   }
 }

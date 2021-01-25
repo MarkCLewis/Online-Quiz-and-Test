@@ -33,7 +33,8 @@ object InstructorPageMode extends Enumeration {
   case class Props(userData: UserData)
   case class State(courses: Seq[CourseData], assessments: Seq[AssessmentData], problems: Seq[ProblemSpec], instructors: Seq[UserData],
     mode: InstructorPageMode.Value, message: String, selectedProblem: Option[ProblemSpec], selectedAssessment: Option[AssessmentData], 
-    editType: String, selectedIndex: Int)
+    editType: String, selectedIndex: Int, assessmentFilter: String, assessmentCreatorMatch: Boolean, 
+    problemFilter: String, problemCreatorMatch: Boolean)
 
   override def componentDidMount() = {
     loadCourses()
@@ -41,10 +42,12 @@ object InstructorPageMode extends Enumeration {
     loadProblems()
   }
 
-  def initialState = State(Nil, Nil, Nil, Nil, InstructorPageMode.TopPage, "", None, None, "", -1)
+  def initialState = State(Nil, Nil, Nil, Nil, InstructorPageMode.TopPage, "", None, None, "", -1, "", true, "", true)
 
   def render(): ReactElement = state.mode match {
     case InstructorPageMode.TopPage =>
+      val assessmentFilterRegex = try { state.assessmentFilter.r } catch { case ex: Exception => ".*".r }
+      val problemFilterRegex = try { state.problemFilter.r } catch { case ex: Exception => ".*".r }
       div (
         header (h1 ("Instructor page: " + props.userData.username) ),
         button ("Change Password", onClick := (e => setState(state.copy(mode = InstructorPageMode.ChangePassword)))),
@@ -59,7 +62,8 @@ object InstructorPageMode extends Enumeration {
           thead (
             tr (
               th ("Course"),
-              th ("View Summary")
+              th ("View Summary"),
+              th ("Active")
             )
           ),
           tbody (
@@ -67,7 +71,9 @@ object InstructorPageMode extends Enumeration {
               tr (key := index.toString, 
                 td (s"${course.name}-${course.semester}-${course.section}", 
                   onClick := (e => setState(state.copy(mode = InstructorPageMode.DisplayCourse, selectedIndex = index)))),
-                td ("Summary", onClick := (e => setState(state.copy(mode = InstructorPageMode.DisplayCourseSummary, selectedIndex = index))))
+                td ("Summary", onClick := (e => setState(state.copy(mode = InstructorPageMode.DisplayCourseSummary, selectedIndex = index)))),
+                td ( input (`type` := "checkbox", checked := course.active,
+                  onChange := {e => updateActive(course, index, e.target.checked) }))
               )
             }
           )
@@ -77,11 +83,18 @@ object InstructorPageMode extends Enumeration {
         button ("Create", onClick := (e => setState(state.copy(mode = InstructorPageMode.EditAssessment, selectedAssessment = None, selectedIndex = -1)))),
         br(),
         "Filter:",
+        input (`type` := "text", value := state.assessmentFilter,
+          onChange := (e => setState(state.copy(assessmentFilter = e.target.value)))),
+        ", Only mine:",
+        input (`type` := "checkbox", checked := state.assessmentCreatorMatch,
+          onChange := (e => setState(state.copy(assessmentCreatorMatch = e.target.checked)))),
         br(),
         table (
           thead ( tr (th ("Name"), th ("Description"), th ("Auto-grade"))),
           tbody (
-            state.assessments.zipWithIndex.map { case (a, i) =>
+            state.assessments.filter(a => 
+                assessmentFilterRegex.findFirstIn(a.name+a.description).nonEmpty && 
+                (!state.assessmentCreatorMatch || a.creatorid == props.userData.id)).zipWithIndex.map { case (a, i) =>
               tr ( key := i.toString, td (a.name), td (a.description), td (AutoGradeOptions.asString(a.autoGrade)), 
                 onClick := (e => setState(state.copy(mode = InstructorPageMode.EditAssessment, selectedIndex = i, selectedAssessment = Some(a), editType = ""))))
             }
@@ -104,11 +117,19 @@ object InstructorPageMode extends Enumeration {
         ),
         br(),
         "Filter:",
+        input (`type` := "text", value := state.problemFilter,
+          onChange := (e => setState(state.copy(problemFilter = e.target.value)))),
+        ", Only mine:",
+        input (`type` := "checkbox", checked := state.problemCreatorMatch,
+          onChange := (e => setState(state.copy(problemCreatorMatch = e.target.checked)))),
         br(),
         table (
           thead (tr (th ("Type"), th ("Name"), th ("Prompt"))),
           tbody (
-            state.problems.zipWithIndex.map { case (pspec, i) =>
+            state.problems.filter(p => 
+                problemFilterRegex.findFirstIn(p.info.name+p.info.prompt).nonEmpty && 
+                (!state.problemCreatorMatch || p.creatorid.forall(_ == props.userData.id))).
+                zipWithIndex.map { case (pspec, i) =>
               tr (key := i.toString, td (pspec.specType), td (pspec.info.name), td (pspec.info.prompt),
                 onClick := (e => setState(state.copy(mode = InstructorPageMode.EditProblem, selectedIndex = i, selectedProblem = Some(pspec), editType = ""))))
             }
@@ -128,9 +149,9 @@ object InstructorPageMode extends Enumeration {
     case InstructorPageMode.DisplayCourseSummary =>
       ViewCourseSummary(props.userData, state.courses(state.selectedIndex), () => setState(state.copy(mode = InstructorPageMode.TopPage)))
     case InstructorPageMode.EditProblem =>
-      EditProblem(state.editType, state.selectedProblem, () => setState(state.copy(mode = InstructorPageMode.TopPage)), () => loadProblems())
+      EditProblem(props.userData, state.editType, state.selectedProblem, () => setState(state.copy(mode = InstructorPageMode.TopPage)), () => loadProblems())
     case InstructorPageMode.EditAssessment =>
-      EditAssessment(state.selectedAssessment, state.problems, () => setState(state.copy(mode = InstructorPageMode.TopPage)), () => loadAssessments())
+      EditAssessment(props.userData, state.selectedAssessment, state.problems, () => setState(state.copy(mode = InstructorPageMode.TopPage)), () => loadAssessments())
   }
 
   implicit val ec = ExecutionContext.global
@@ -156,4 +177,9 @@ object InstructorPageMode extends Enumeration {
       e => setState(_.copy(message = "Error with Json loading problems.")))
   }
 
+  def updateActive(course: CourseData, index: Int, newActive: Boolean): Unit = {
+    PostFetch.fetch("/updateActive", (course.id, newActive),
+      (numUpdated: Int) => if (numUpdated == 1) setState(state.copy(courses = state.courses.patch(index, List(course.copy(active = newActive)), 1))),
+      e => setState(_.copy(message = "Error with Json loading problems.")))
+  }
 }
