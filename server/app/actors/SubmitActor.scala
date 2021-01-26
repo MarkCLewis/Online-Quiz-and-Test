@@ -13,7 +13,7 @@ import models.OCModel
 import models.CodeRunner
 import akka.actor.PoisonPill
 
-class SubmitActor(out: ActorRef, model: OCModel) extends Actor {
+class SubmitActor(out: ActorRef, model: OCModel, codeRunner: ActorRef) extends Actor {
   implicit val ex = context.dispatcher
   def receive = {
     case jsVal: JsValue =>
@@ -43,6 +43,18 @@ class SubmitActor(out: ActorRef, model: OCModel) extends Actor {
           out ! Json.toJson(CodeSubmitResponse("Error parsing submit message.", false))
           self ! PoisonPill
       }
+    case Messages.TestResult(pass, sai, makeAnswer) =>
+      if (pass) {
+        println("Passed test.")
+        out ! Json.toJson(CodeSubmitResponse("Correct.", true))
+        model.setGradeData(GradeData(-1, sai.userid, sai.courseid, sai.paaid, 100.0, "Auto-graded at correct."))
+        model.addAnswer(sai.copy(answer = makeAnswer(true)))
+      } else {
+        println("Failed test.")
+        out ! Json.toJson(CodeSubmitResponse("Test failed.", false))
+        model.addAnswer(sai.copy(answer = makeAnswer(false)))
+      }
+      self ! PoisonPill
     case m => println("Submit got: " + m)
   }
 
@@ -50,18 +62,7 @@ class SubmitActor(out: ActorRef, model: OCModel) extends Actor {
     model.oneProblemFromPAAID(sai.paaid).map {
       case Some(ps) =>
         out ! Json.toJson(CodeSubmitResponse("Testing code.", false))
-        val pass = runTest(ps)
-        if (pass) {
-          println("Passed test.")
-          out ! Json.toJson(CodeSubmitResponse("Correct.", true))
-          model.setGradeData(GradeData(-1, sai.userid, sai.courseid, sai.paaid, 100.0, "Auto-graded at correct."))
-          model.addAnswer(sai.copy(answer = makeAnswer(true)))
-        } else {
-          println("Failed test.")
-          out ! Json.toJson(CodeSubmitResponse("Test failed.", false))
-          model.addAnswer(sai.copy(answer = makeAnswer(false)))
-        }
-        self ! PoisonPill
+        codeRunner ! Messages.RunTest(sai, () => runTest(ps), makeAnswer)
       case None =>
         out ! Json.toJson(CodeSubmitResponse("Error reading problem for tesing.", false))
         self ! PoisonPill
@@ -70,5 +71,5 @@ class SubmitActor(out: ActorRef, model: OCModel) extends Actor {
 }
 
 object SubmitActor {
-  def props(out: ActorRef, model: OCModel) = Props(new SubmitActor(out, model))
+  def props(out: ActorRef, model: OCModel, codeRunner: ActorRef) = Props(new SubmitActor(out, model, codeRunner))
 }

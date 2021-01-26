@@ -27,6 +27,7 @@ import scala.scalajs.js.Date
 
   override def componentDidMount(): Unit = {
     loadData()
+    loadTime()
     if (state.start.isEmpty && props.aci.timeLimit.nonEmpty) startTime()
     shortInterval = dom.window.setInterval(() => updateTimer1Second(), 1000)
     longInterval = dom.window.setInterval(() => loadTime(), 60000)

@@ -21,6 +21,8 @@ import onlineclassroom._
 import onlineclassroom.ReadsAndWrites._
 import scala.concurrent.Future
 import java.sql.Timestamp
+import akka.actor.Props
+import actors.CodeRunActor
 
 @Singleton
 class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvider, cc: ControllerComponents)
@@ -33,6 +35,8 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
   val model = new OCDatabaseModel(db)
   model.initializeIfNeeded()
   models.ScalaSetup.downloadScala()
+
+  val codeRunActor = system.actorOf(Props(new CodeRunActor), "CodeRunner")
 
   def index = Action { implicit request =>
     Ok(views.html.index()) 
@@ -278,7 +282,7 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
   def submitSocket = WebSocket.accept[JsValue, JsValue] { request =>
     println("Request for socket " + request)
     ActorFlow.actorRef { out =>
-      actors.SubmitActor.props(out, model)
+      actors.SubmitActor.props(out, model, codeRunActor)
     }
   }
 }

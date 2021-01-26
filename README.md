@@ -4,4 +4,3 @@ This project is intended to be an online classroom that students can use for qui
 to grow from there.
 
 ## TODO list
-

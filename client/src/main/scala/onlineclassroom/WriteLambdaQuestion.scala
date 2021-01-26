@@ -17,9 +17,9 @@ import scala.scalajs.js.JSON
 @react class WriteLambdaQuestion extends Component {
   case class Props(user: UserData, course: CourseData, paaid: Int, info: WriteLambdaInfo, lastAnswer: Option[WriteLambdaAnswer], 
     editable: Boolean, setAnswer: WriteLambdaAnswer => Unit)
-  case class State(message: String, answer: Option[WriteLambdaAnswer])
+  case class State(message: String, answer: Option[WriteLambdaAnswer], processing: Boolean)
 
-  def initialState: State = State("", props.lastAnswer)
+  def initialState: State = State("", props.lastAnswer, false)
 
   def render(): ReactElement = {
     div (
@@ -34,7 +34,7 @@ import scala.scalajs.js.JSON
         onChange := (e => setState(state.copy(answer = Some(WriteLambdaAnswer(e.target.value, state.answer.map(_.passed).getOrElse(false))))))),
       br(),
       button ("Submit", onClick := (e => state.answer.foreach(wfa => if (wfa.code.nonEmpty) submitCode(wfa.code))),
-        disabled := state.answer.map(_.passed).getOrElse(false) || !props.editable),
+        disabled := state.answer.map(_.passed).getOrElse(false) || !props.editable || state.processing),
       state.message
     )
   }
@@ -53,8 +53,12 @@ import scala.scalajs.js.JSON
               setState(state.copy(message = "Error parsing server response."))
           }
         }
-        sock.onopen = e => sock.send(Json.toJson(SaveAnswerInfo(-1, props.user.id, props.course.id, props.paaid, ans)).toString())
+        sock.onopen = e => {
+          setState(state.copy(processing = true))
+          sock.send(Json.toJson(SaveAnswerInfo(-1, props.user.id, props.course.id, props.paaid, ans)).toString())
+        }
         sock.onerror = e => println("Websocket error: " + JSON.stringify(e))
+        sock.onclose = e => setState(state.copy(processing = false))
       } else setState(state.copy(message = "Code can't be empty."))
     }
   }

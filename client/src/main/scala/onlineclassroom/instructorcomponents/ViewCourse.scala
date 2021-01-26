@@ -24,6 +24,7 @@ import play.api.libs.json._
 import scala.scalajs.js.Thenable.Implicits._
 import onlineclassroom._
 import onlineclassroom.ReadsAndWrites._
+import scala.scalajs.js.Date
 
 object InstructorCourseViewModes extends Enumeration {
   val Normal, Grading, Monitoring, ViewSingleAssessment = Value
@@ -32,12 +33,25 @@ object InstructorCourseViewModes extends Enumeration {
 @react class ViewCourse extends Component {
   case class Props(userData: UserData, course: CourseData, allAssessments: Seq[AssessmentData], exitFunc: () => Unit)
   case class State(message: String, mode: InstructorCourseViewModes.Value, studentData: Seq[FullStudentData], gradeData: Option[CourseGradeInformation], 
-    selectedAssessment: Option[AssessmentCourseInfo], newStudentEmail: String, selectedStudent: Option[UserData], selectedACI: Option[AssessmentCourseInfo])
+    selectedAssessment: Option[AssessmentCourseInfo], newStudentEmail: String, selectedStudent: Option[UserData], selectedACI: Option[AssessmentCourseInfo],
+    serverTime: Date)
 
-  def initialState: State = State("", InstructorCourseViewModes.Normal, Nil, None, None, "", None, None)
+  def initialState: State = State("", InstructorCourseViewModes.Normal, Nil, None, None, "", None, None, new Date)
+
+  private var shortInterval: Int = 0;
+  private var longInterval: Int = 0;
 
   override def componentDidMount(): Unit = {
+    loadTime()
     loadData()
+    shortInterval = dom.window.setInterval(() => updateTimer1Second(), 1000)
+    longInterval = dom.window.setInterval(() => loadTime(), 60000)
+
+  }
+
+  override def componentWillUnmount(): Unit = {
+    dom.window.clearInterval(shortInterval)
+    dom.window.clearInterval(longInterval)
   }
 
   def render: ReactElement = {
@@ -100,6 +114,9 @@ object InstructorCourseViewModes extends Enumeration {
                   }
                 })
               ),
+              br(),
+              "Server Time:",
+              state.serverTime.toLocaleString(),
               br(),
               "Times in yyyy-[m]m-[d]d hh:mm:ss[.f...] format",
               table (
@@ -194,5 +211,16 @@ object InstructorCourseViewModes extends Enumeration {
     PostFetch.fetch("/updateTimeMultiplier", (userid, courseid, newMult),
       (num: Int) => {},
       e => setState(_.copy(message = "Error with Json updating time multiplier.")))
+  }
+
+  def loadTime(): Unit = {
+    PostFetch.fetch("/getServerTime", props.userData.id,
+      (time: String) => setState(state.copy(serverTime = new Date(time))),
+      e => setState(_.copy(message = "Error with JSON response getting server time.")))
+  }
+
+  def updateTimer1Second(): Unit = {
+    state.serverTime.setMilliseconds(state.serverTime.getMilliseconds()+1000)
+    setState(state.copy(serverTime = state.serverTime))
   }
 }
