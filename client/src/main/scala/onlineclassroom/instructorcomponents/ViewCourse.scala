@@ -34,9 +34,9 @@ object InstructorCourseViewModes extends Enumeration {
   case class Props(userData: UserData, course: CourseData, allAssessments: Seq[AssessmentData], exitFunc: () => Unit)
   case class State(message: String, mode: InstructorCourseViewModes.Value, studentData: Seq[FullStudentData], gradeData: Option[CourseGradeInformation], 
     selectedAssessment: Option[AssessmentCourseInfo], newStudentEmail: String, selectedStudent: Option[UserData], selectedACI: Option[AssessmentCourseInfo],
-    serverTime: Date)
+    serverTime: Date, assessmentFilter: String, assessmentCreatorMatch: Boolean)
 
-  def initialState: State = State("", InstructorCourseViewModes.Normal, Nil, None, None, "", None, None, new Date)
+  def initialState: State = State("", InstructorCourseViewModes.Normal, Nil, None, None, "", None, None, new Date, "", true)
 
   private var shortInterval: Int = 0;
   private var longInterval: Int = 0;
@@ -61,118 +61,127 @@ object InstructorCourseViewModes extends Enumeration {
       case Some(gd) =>
       state.mode match {
         case InstructorCourseViewModes.Normal =>
-            val adMap = props.allAssessments.map(ad => ad.id -> ad).toMap
-            val aciByName = gd.assessments.map(aci => aci.name -> aci).toMap
-            val groupedAssessments = gd.assessments.groupBy(_.group)
-            val groups = groupedAssessments.keys.toSeq.sortWith((g1, g2) => if (g1.isEmpty || g2.isEmpty) g1 > g2 else g1 < g2)
-            val formulaMap = gd.formulas.map(f => f.groupName -> f.formula).toMap
-            val groupColumns = groupedAssessments.map { case (group, saci) => group -> (saci.map(_.name).sorted ++ (if (formulaMap.contains(group)) Seq("Total") else Nil))}
-            div (
-              h2 (s"${props.course.name}-${props.course.semester}-${props.course.section}", button ("Done", onClick := (e => props.exitFunc()))),
-              h3 ("Students and Grades"),
-              "Click a column header to grade that assignment.",
-              br(),
-              table (
-                thead (
-                  tr ( th ("Email", rowSpan := 2), th ("Time Multiplier", rowSpan := 2), 
-                    groups.zipWithIndex.map { case (g, i) => th (key := i.toString, g, colSpan := groupColumns(g).length)}),
-                  tr ( groups.zipWithIndex.map { case (g, i) => groupColumns(g).zipWithIndex.map { case (colHead, j) => 
-                    th (key := (i*100+j).toString, colHead, onClick := (e => setState(state.copy(mode = InstructorCourseViewModes.Grading, selectedAssessment = aciByName.get(colHead)))))}})
-                ),
-                tbody (
-                  state.studentData.sortBy(_.email.drop(1)).zipWithIndex.map { case (sd, i) =>
-                    tr (key := i.toString, 
-                      td (sd.email), 
-                      td (input (`type` := "number", value := sd.timeMultiplier.toString, 
-                        onChange := { e => 
-                          val newMult = if (e.target.value.isEmpty) 0.0 else e.target.value.toDouble
-                          setState(state.copy(studentData = state.studentData.patch(i, Seq(sd.copy(timeMultiplier = newMult)), 1)))
-                        },
-                        onBlur := (e => updateTimeMultiplier(sd.id, props.course.id, sd.timeMultiplier))
-                      )), 
-                      groups.zipWithIndex.map { case (g, j) => groupColumns(g).zipWithIndex.map { case (colHead, k) => td (key := (j*100+k).toString, 
-                        if (sd.grades.contains(colHead)) sd.grades(colHead) else Formulas.calcFormula(sd.grades, formulaMap.get(g).getOrElse("")),
-                        onClick := (e => setState(state.copy(mode = InstructorCourseViewModes.ViewSingleAssessment, 
-                          selectedStudent = Some(UserData(sd.email, sd.id, false)), selectedACI = aciByName.get(colHead))))
-                      )}})
-                  }
-                )
+          val adMap = props.allAssessments.map(ad => ad.id -> ad).toMap
+          val aciByName = gd.assessments.map(aci => aci.name -> aci).toMap
+          val groupedAssessments = gd.assessments.groupBy(_.group)
+          val groups = groupedAssessments.keys.toSeq.sortWith((g1, g2) => if (g1.isEmpty || g2.isEmpty) g1 > g2 else g1 < g2)
+          val formulaMap = gd.formulas.map(f => f.groupName -> f.formula).toMap
+          val groupColumns = groupedAssessments.map { case (group, saci) => group -> (saci.map(_.name).sorted ++ (if (formulaMap.contains(group)) Seq("Total") else Nil))}
+          val assessmentFilterRegex = try { state.assessmentFilter.r } catch { case ex: Exception => ".*".r }
+          div (
+            h2 (s"${props.course.name}-${props.course.semester}-${props.course.section}", button ("Done", onClick := (e => props.exitFunc()))),
+            h3 ("Students and Grades"),
+            "Click a column header to grade that assignment.",
+            br(),
+            table (
+              thead (
+                tr ( th ("Email", rowSpan := 2), th ("Time Multiplier", rowSpan := 2), 
+                  groups.zipWithIndex.map { case (g, i) => th (key := i.toString, g, colSpan := groupColumns(g).length)}),
+                tr ( groups.zipWithIndex.map { case (g, i) => groupColumns(g).zipWithIndex.map { case (colHead, j) => 
+                  th (key := (i*100+j).toString, colHead, onClick := (e => setState(state.copy(mode = InstructorCourseViewModes.Grading, selectedAssessment = aciByName.get(colHead)))))}})
               ),
-              hr (),
-              "Add Student by email:",
-              input (`type` := "text", value := state.newStudentEmail, onChange := (e => setState(state.copy(newStudentEmail = e.target.value)))),
-              button ("Add", onClick := (e => { addStudent(state.newStudentEmail); setState(state.copy(newStudentEmail = ""))})),
-              h3 ("Assessments"),
-              "Add Assessment:",
-              select (
-                option (value := "-1", "Select to add"),
-                props.allAssessments.zipWithIndex.map { case (ad, i) => option (key := i.toString, value := ad.id.toString, ad.name) },
-                onChange := (e => if(e.target.value != "-1") {
-                  val adid = e.target.value.toInt
-                  if (adid >= 0) {
-                    updateAssessmentCourseAssoc(AssessmentCourseInfo(-1, props.course.id, adid, adMap(adid).name, adMap(adid).description, 100, "", AutoGradeOptions.Never, None, None, None), -1)
-                  }
-                })
+              tbody (
+                state.studentData.sortBy(_.email.drop(1)).zipWithIndex.map { case (sd, i) =>
+                  tr (key := i.toString, 
+                    td (sd.email), 
+                    td (input (`type` := "number", value := sd.timeMultiplier.toString, 
+                      onChange := { e => 
+                        val newMult = if (e.target.value.isEmpty) 0.0 else e.target.value.toDouble
+                        setState(state.copy(studentData = state.studentData.patch(i, Seq(sd.copy(timeMultiplier = newMult)), 1)))
+                      },
+                      onBlur := (e => updateTimeMultiplier(sd.id, props.course.id, sd.timeMultiplier))
+                    )), 
+                    groups.zipWithIndex.map { case (g, j) => groupColumns(g).zipWithIndex.map { case (colHead, k) => td (key := (j*100+k).toString, 
+                      if (sd.grades.contains(colHead)) sd.grades(colHead) else Formulas.calcFormula(sd.grades, formulaMap.get(g).getOrElse("")),
+                      onClick := (e => setState(state.copy(mode = InstructorCourseViewModes.ViewSingleAssessment, 
+                        selectedStudent = Some(UserData(sd.email, sd.id, false)), selectedACI = aciByName.get(colHead))))
+                    )}})
+                }
+              )
+            ),
+            hr (),
+            "Add Student by email:",
+            input (`type` := "text", value := state.newStudentEmail, onChange := (e => setState(state.copy(newStudentEmail = e.target.value)))),
+            button ("Add", onClick := (e => { addStudent(state.newStudentEmail); setState(state.copy(newStudentEmail = ""))})),
+            h3 ("Assessments"),
+            "Add Assessment:",
+            select (
+              option (value := "-1", "Select to add"),
+              props.allAssessments.filter(a => 
+                assessmentFilterRegex.findFirstIn(a.name+a.description).nonEmpty && 
+                (!state.assessmentCreatorMatch || a.creatorid == props.userData.id))
+                .zipWithIndex.map { case (ad, i) => option (key := i.toString, value := ad.id.toString, ad.name) },
+              onChange := (e => if(e.target.value != "-1") {
+                val adid = e.target.value.toInt
+                if (adid >= 0) {
+                  updateAssessmentCourseAssoc(AssessmentCourseInfo(-1, props.course.id, adid, adMap(adid).name, adMap(adid).description, 100, "", AutoGradeOptions.Never, None, None, None), -1)
+                }
+              })
+            ),
+            input (`type` := "text", value := state.assessmentFilter,
+              onChange := (e => setState(state.copy(assessmentFilter = e.target.value)))),
+            ", Only mine:",
+            input (`type` := "checkbox", checked := state.assessmentCreatorMatch,
+              onChange := (e => setState(state.copy(assessmentCreatorMatch = e.target.checked)))),
+            br(),
+            "Server Time:",
+            state.serverTime.toLocaleString(),
+            br(),
+            "Times in yyyy-[m]m-[d]d hh:mm:ss[.f...] format",
+            table (
+              thead (
+                tr (th ("Name"), th("Description"), th("Points"), th("Group"), th("Autograde"), th("Start"), th("End"), th("Minutes"))            
               ),
-              br(),
-              "Server Time:",
-              state.serverTime.toLocaleString(),
-              br(),
-              "Times in yyyy-[m]m-[d]d hh:mm:ss[.f...] format",
-              table (
-                thead (
-                  tr (th ("Name"), th("Description"), th("Points"), th("Group"), th("Autograde"), th("Start"), th("End"), th("Minutes"))            
-                ),
-                tbody (
-                  state.gradeData.map { gd =>
-                    gd.assessments.zipWithIndex.map { case (aci, i) => tr ( key := i.toString,
-                      td (aci.name, onClick := (e => setState(state.copy(mode = InstructorCourseViewModes.Monitoring, selectedAssessment = Some(aci))))), 
-                      td (aci.description), 
-                      td ( input (`type` := "number", value := aci.points.toString, 
-                        onChange := (e => setState(state.copy(gradeData = Some(state.gradeData.get.copy(assessments = 
-                          state.gradeData.get.assessments.patch(i, Seq(aci.copy(points = if (e.target.value.isEmpty()) 0 else e.target.value.toInt)), 1)))))),
-                        onBlur := (e => updateAssessmentCourseAssoc(aci, i))
-                      )), 
-                      td (input (`type` := "text", value := aci.group,
-                        onChange := (e => setState(state.copy(gradeData = Some(state.gradeData.get.copy(assessments = 
-                          state.gradeData.get.assessments.patch(i, Seq(aci.copy(group = e.target.value)), 1)))))),
-                        onBlur := (e => updateAssessmentCourseAssoc(aci, i))
-                      )), 
-                      td ( select ( value := aci.autoGrade.toString(),
-                        option (value := "0", AutoGradeOptions.asString(0)),
-                        option (value := "1", AutoGradeOptions.asString(1)),
-                        option (value := "2", AutoGradeOptions.asString(2)),
-                        onChange := (e => updateAssessmentCourseAssoc(aci.copy(autoGrade = e.target.value.toInt), i))
-                      )),
-                      td ( input (`type` := "text", value := aci.start.getOrElse(""),
-                        onChange := (e => setState(state.copy(gradeData = Some(state.gradeData.get.copy(assessments = 
-                          state.gradeData.get.assessments.patch(i, Seq(aci.copy(start = Some(e.target.value))), 1)))))),
-                        onBlur := (e => updateAssessmentCourseAssoc(aci.copy(start = Some(e.target.value)), i))
-                      )),
-                      td ( input (`type` := "text", value := aci.end.getOrElse(""),
-                        onChange := (e => setState(state.copy(gradeData = Some(state.gradeData.get.copy(assessments = 
-                          state.gradeData.get.assessments.patch(i, Seq(aci.copy(end = Some(e.target.value))), 1)))))),
-                        onBlur := (e => updateAssessmentCourseAssoc(aci.copy(end = Some(e.target.value)), i))
-                      )), 
-                      td ( input (`type` := "text", value := aci.timeLimit.map(_.toString).getOrElse(""), 
-                        onChange := (e => setState(state.copy(gradeData = Some(state.gradeData.get.copy(assessments = 
-                          state.gradeData.get.assessments.patch(i, Seq(aci.copy(timeLimit = try { Some(e.target.value.toInt) } catch { case e: NumberFormatException => None })), 1)))))), 
-                        onBlur := (e => updateAssessmentCourseAssoc(aci, i))
-                      ))
-                    ) }: ReactElement
-                  }.getOrElse(Seq(tr (): ReactElement))
-                )
-              ),
-              state.message,
-              button ("Done", onClick := (e => props.exitFunc()))
-            )
-          case InstructorCourseViewModes.Grading =>
-            GradeAssessment(props.userData, props.course, state.selectedAssessment.get, () => setState(state.copy(mode = InstructorCourseViewModes.Normal)))
-          case InstructorCourseViewModes.Monitoring =>
-            MonitorAssessmentComponent(props.userData, props.course, state.selectedAssessment.get, state.studentData, () => setState(state.copy(mode = InstructorCourseViewModes.Normal)))
-          case InstructorCourseViewModes.ViewSingleAssessment =>
-            onlineclassroom.studentcomponents.ViewAssessment(state.selectedStudent.get, props.course, state.selectedACI.get, () => setState(state.copy(mode = InstructorCourseViewModes.Normal)))
-        }
+              tbody (
+                state.gradeData.map { gd =>
+                  gd.assessments.zipWithIndex.map { case (aci, i) => tr ( key := i.toString,
+                    td (aci.name, onClick := (e => setState(state.copy(mode = InstructorCourseViewModes.Monitoring, selectedAssessment = Some(aci))))), 
+                    td (aci.description), 
+                    td ( input (`type` := "number", value := aci.points.toString, 
+                      onChange := (e => setState(state.copy(gradeData = Some(state.gradeData.get.copy(assessments = 
+                        state.gradeData.get.assessments.patch(i, Seq(aci.copy(points = if (e.target.value.isEmpty()) 0 else e.target.value.toInt)), 1)))))),
+                      onBlur := (e => updateAssessmentCourseAssoc(aci, i))
+                    )), 
+                    td (input (`type` := "text", value := aci.group,
+                      onChange := (e => setState(state.copy(gradeData = Some(state.gradeData.get.copy(assessments = 
+                        state.gradeData.get.assessments.patch(i, Seq(aci.copy(group = e.target.value)), 1)))))),
+                      onBlur := (e => updateAssessmentCourseAssoc(aci, i))
+                    )), 
+                    td ( select ( value := aci.autoGrade.toString(),
+                      option (value := "0", AutoGradeOptions.asString(0)),
+                      option (value := "1", AutoGradeOptions.asString(1)),
+                      option (value := "2", AutoGradeOptions.asString(2)),
+                      onChange := (e => updateAssessmentCourseAssoc(aci.copy(autoGrade = e.target.value.toInt), i))
+                    )),
+                    td ( input (`type` := "text", value := aci.start.getOrElse(""),
+                      onChange := (e => setState(state.copy(gradeData = Some(state.gradeData.get.copy(assessments = 
+                        state.gradeData.get.assessments.patch(i, Seq(aci.copy(start = Some(e.target.value))), 1)))))),
+                      onBlur := (e => updateAssessmentCourseAssoc(aci.copy(start = Some(e.target.value)), i))
+                    )),
+                    td ( input (`type` := "text", value := aci.end.getOrElse(""),
+                      onChange := (e => setState(state.copy(gradeData = Some(state.gradeData.get.copy(assessments = 
+                        state.gradeData.get.assessments.patch(i, Seq(aci.copy(end = Some(e.target.value))), 1)))))),
+                      onBlur := (e => updateAssessmentCourseAssoc(aci.copy(end = Some(e.target.value)), i))
+                    )), 
+                    td ( input (`type` := "text", value := aci.timeLimit.map(_.toString).getOrElse(""), 
+                      onChange := (e => setState(state.copy(gradeData = Some(state.gradeData.get.copy(assessments = 
+                        state.gradeData.get.assessments.patch(i, Seq(aci.copy(timeLimit = try { Some(e.target.value.toInt) } catch { case e: NumberFormatException => None })), 1)))))), 
+                      onBlur := (e => updateAssessmentCourseAssoc(aci, i))
+                    ))
+                  ) }: ReactElement
+                }.getOrElse(Seq(tr (): ReactElement))
+              )
+            ),
+            state.message,
+            button ("Done", onClick := (e => props.exitFunc()))
+          )
+        case InstructorCourseViewModes.Grading =>
+          GradeAssessment(props.userData, props.course, state.selectedAssessment.get, () => setState(state.copy(mode = InstructorCourseViewModes.Normal)))
+        case InstructorCourseViewModes.Monitoring =>
+          MonitorAssessmentComponent(props.userData, props.course, state.selectedAssessment.get, state.studentData, () => setState(state.copy(mode = InstructorCourseViewModes.Normal)))
+        case InstructorCourseViewModes.ViewSingleAssessment =>
+          onlineclassroom.studentcomponents.ViewAssessment(state.selectedStudent.get, props.course, state.selectedACI.get, () => setState(state.copy(mode = InstructorCourseViewModes.Normal)))
+      }
     }
   }
 
