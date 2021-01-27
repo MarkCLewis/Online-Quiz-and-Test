@@ -91,6 +91,12 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
     }
   }
 
+  def resetPassword = AuthenticatedInstructorAction { implicit request =>
+    withJsonBody[NewUserData] { nud =>
+      model.resetPassword(nud.username, nud.password).map(i => Ok(Json.toJson(i > 0)))
+    }
+  }
+
   def createCourse = AuthenticatedInstructorAction { implicit request =>
     withJsonBody[NewCourseData] { ncd =>
       model.addCourse(ncd, request.session("userid").toInt).map(b => Ok(Json.toJson(b)))

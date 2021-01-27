@@ -57,6 +57,8 @@ object InstructorPageMode extends Enumeration {
         hr(),
         CreateUser(props.userData),
         hr(),
+        ResetPassword(props.userData),
+        hr(),
         h3 ("Courses"),
         div ( table (
           thead (

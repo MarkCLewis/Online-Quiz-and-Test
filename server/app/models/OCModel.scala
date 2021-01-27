@@ -7,6 +7,7 @@ trait OCModel {
   def validateUser(username: String, password: String): Future[Option[(Int, Boolean)]]
   def createUser(username: String, password: String, instructor: Boolean): Future[Int]
   def changePassword(userid: Int, oldPassword: String, newPassword: String): Future[Boolean]
+  def resetPassword(username: String, password: String): Future[Int]
   def coursesForUser(userid: Int): Future[Seq[CourseData]]
   def addUserToCourse(userid: Int, courseid: Int): Future[Boolean]
   def addCourse(ncd:NewCourseData, userid:Int):Future[Boolean]

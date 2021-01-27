@@ -48,7 +48,11 @@ class OCDatabaseModel(db: Database)(implicit ec: ExecutionContext) extends OCMod
     }
   }
 
-  def coursesForUser(userid: Int): Future[Seq[CourseData]] = {
+def resetPassword(username: String, password: String): Future[Int] = {
+  db.run(Users.filter(u => u.email === username).map(_.password).update(BCrypt.hashpw(password, BCrypt.gensalt())))
+}
+
+def coursesForUser(userid: Int): Future[Seq[CourseData]] = {
     db.run(
       (for {
         (ucar,cr) <- UserCourseAssoc join Course on (_.courseid === _.id)
