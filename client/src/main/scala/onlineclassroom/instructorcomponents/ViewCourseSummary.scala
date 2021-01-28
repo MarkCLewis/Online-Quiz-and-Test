@@ -53,7 +53,7 @@ object InstructorCourseSummaryViewModes extends Enumeration {
                         onClick := (e => setState(state.copy(mode = InstructorCourseSummaryViewModes.Summary, selectedAssessment = Some(aci))))
                       ),
                       td ( if (aci.autoGrade == AutoGradeOptions.OnInstructor) {
-                        span ("Grade", onClick := (e => autoGrade(aci.id)))
+                        span ("Grade", onClick := (e => autoGrade(aci.assessmentid)))
                       } else "")
                     )
                   }
