@@ -123,7 +123,7 @@ object InstructorCourseSummaryViewModes extends Enumeration {
 
   def loadDataAssessment(): Unit = {
     state.selectedAssessment.foreach(sa =>
-      PostFetch.fetch("/assessmentGradingData", (props.course.id, sa.id),
+      PostFetch.fetch("/assessmentGradingData", (props.course.id, sa.assessmentid),
         (agd: AssessmentGradingData) => {println("Data loaded."); setState(state.copy(gradeData = Some(agd)))},
         e => { println(e); setState(state.copy(message = "Error with JSON loading data."))})
     )
