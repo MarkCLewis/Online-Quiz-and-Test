@@ -50,7 +50,7 @@ object InstructorCourseSummaryViewModes extends Enumeration {
                   cgi.assessments.map { aci =>
                     tr ( key := s"key-${aci.id}",
                       td ( aci.name,
-                        onClick := (e => setState(state.copy(mode = InstructorCourseSummaryViewModes.Summary, selectedAssessment = Some(aci))))
+                        onClick := (e => setState(state.copy(message = "", mode = InstructorCourseSummaryViewModes.Summary, selectedAssessment = Some(aci))))
                       ),
                       td ( if (aci.autoGrade == AutoGradeOptions.OnInstructor) {
                         span ("Grade", onClick := (e => autoGrade(aci.assessmentid)))
@@ -69,7 +69,7 @@ object InstructorCourseSummaryViewModes extends Enumeration {
             div (
               "Loading Course Data ...", state.message,
               br (),
-              button ("Done", onClick := (e => setState(state.copy(mode = InstructorCourseSummaryViewModes.Normal))))
+              button ("Done", onClick := (e => setState(state.copy(message = "", mode = InstructorCourseSummaryViewModes.Normal))))
             )
           case Some(gd) =>
             div (
@@ -85,19 +85,19 @@ object InstructorCourseSummaryViewModes extends Enumeration {
                   gd.problems.map { gpd => 
                     tr ( key := s"key-${gpd.id}",
                       td ( 
-                        (gpd.spec.info, gpd.answers.lastOption.map(_.answer)) match {
-                          case (sai: ShortAnswerInfo, lastAnswer: Option[ShortAnswerAnswer]) =>
-                            ShortAnswerQuestion(props.userData, props.course, -1, sai, lastAnswer, false, ans => {})
-                          case (mci: MultipleChoiceInfo, lastAnswer: Option[MultipleChoiceAnswer]) =>
-                            MultipleChoiceQuestion(props.userData, props.course, -1, mci, lastAnswer, false, ans => {})
-                          case (wfi: WriteFunctionInfo, lastAnswer: Option[WriteFunctionAnswer]) =>
-                            WriteFunctionQuestion(props.userData, props.course, -1, wfi, lastAnswer, false, ans => {})
-                          case (wei: WriteExpressionInfo, lastAnswer: Option[WriteExpressionAnswer]) =>
-                            WriteExpressionQuestion(props.userData, props.course, -1, wei, lastAnswer, false, ans => {})
-                          case (wli: WriteLambdaInfo, lastAnswer: Option[WriteLambdaAnswer]) =>
-                            WriteLambdaQuestion(props.userData, props.course, -1, wli, lastAnswer, false, ans => {})
-                          case (di: DrawingInfo, lastAnswer: Option[DrawingAnswer]) =>
-                            DrawingQuestion(props.userData, props.course, -1, di, lastAnswer, false, ans => {})
+                        (gpd.spec.info, gpd.spec.answerInfo) match {
+                          case (sai: ShortAnswerInfo, answerInfo: ShortAnswerGradeInfo) =>
+                            ShortAnswerQuestion(props.userData, props.course, -1, sai, Some(ShortAnswerAnswer("", sai.initialElements)), false, ans => {})
+                          case (mci: MultipleChoiceInfo, answerInfo: MultipleChoiceGradeInfo) =>
+                            MultipleChoiceQuestion(props.userData, props.course, -1, mci, Some(MultipleChoiceAnswer(answerInfo.correct)), false, ans => {})
+                          case (wfi: WriteFunctionInfo, _) =>
+                            WriteFunctionQuestion(props.userData, props.course, -1, wfi, None, false, ans => {})
+                          case (wei: WriteExpressionInfo, _) =>
+                            WriteExpressionQuestion(props.userData, props.course, -1, wei, None, false, ans => {})
+                          case (wli: WriteLambdaInfo, _) =>
+                            WriteLambdaQuestion(props.userData, props.course, -1, wli, None, false, ans => {})
+                          case (di: DrawingInfo, answerInfo: DrawingGradeInfo) =>
+                            DrawingQuestion(props.userData, props.course, -1, di, Some(DrawingAnswer(answerInfo.elements)), false, ans => {})
                         }
                       ),
                       td (
@@ -107,7 +107,7 @@ object InstructorCourseSummaryViewModes extends Enumeration {
                   }
                 )
               ),
-              button ("Done", onClick := (e => setState(state.copy(mode = InstructorCourseSummaryViewModes.Normal))))
+              button ("Done", onClick := (e => setState(state.copy(message = "", mode = InstructorCourseSummaryViewModes.Normal))))
             ) 
         }
     }
