@@ -54,7 +54,7 @@ import onlineclassroom.ReadsAndWrites._
                 key := s"key$i",
                 input (`type` := "radio", checked := (state.problemSpec.answerInfo.asInstanceOf[MultipleChoiceGradeInfo].correct == i),
                   onChange := (e => setState(state.copy(problemSpec = ps.copy(answerInfo = MultipleChoiceGradeInfo(i)))))),
-                input (`type` := "text", value := opt,
+                input (`type` := "text", value := opt, size := "80",
                   onChange := (e => setState(state.copy(problemSpec = ps.copy(info = info.copy(options = options.patch(i, List(e.target.value), 1))))))),
                 button (`type` := "button", "Remove",
                   onClick := (e => setState(state.copy(problemSpec = ps.copy(info = info.copy(options = options.patch(i, Nil, 1)))))))
@@ -169,7 +169,7 @@ import onlineclassroom.ReadsAndWrites._
       header,
       br(),
       "Name:",
-      input (`type` := "text", value := name, onChange := (e => setState(state.copy(problemSpec = ps.copy(info = infoNameSet(e.target.value)))))),
+      input (`type` := "text", value := name, size := "30", onChange := (e => setState(state.copy(problemSpec = ps.copy(info = infoNameSet(e.target.value.take(30))))))),
       br(),
       "Prompt:",
       br(),

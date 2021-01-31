@@ -37,6 +37,7 @@ POST       /updateTimeMultiplier         controllers.Application.updateTimeMulti
 POST       /getTimeMultipler             controllers.Application.getTimeMultipler
 POST       /getFullStudentData           controllers.Application.getFullStudentData
 POST       /getFormulas                  controllers.Application.getFormulas
+POST       /updateFormula                controllers.Application.updateFormula
 POST       /studentAssessmentGradingData controllers.Application.studentAssessmentGradingData
 POST       /getInstructors               controllers.Application.getInstructors
 POST       /autoGrade                    controllers.Application.autoGrade

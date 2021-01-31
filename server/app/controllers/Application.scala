@@ -261,6 +261,12 @@ class Application @Inject()(protected val dbConfigProvider: DatabaseConfigProvid
     }
   }
 
+  def updateFormula = AuthenticatedAction { implicit request =>
+    withJsonBody[GradeFormulaInfo] { gfi =>
+      model.updateFormula(gfi).map(fid => Ok(Json.toJson(fid)))
+    }
+  }
+
   def studentAssessmentGradingData = AuthenticatedAction { implicit request =>
     withJsonBody[(Int, Int, Int)] { case (userid, courseid, assessmentid) =>
       model.studentAssessmentGradingData(userid, courseid, assessmentid).map(agd => Ok(Json.toJson(agd)))

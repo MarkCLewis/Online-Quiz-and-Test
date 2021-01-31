@@ -19,7 +19,7 @@ case class NewUserData(username: String, password: String, instructor: Boolean)
 
 case class FullStudentData(id: Int, email: String, grades: Map[String, Double], timeMultiplier: Double)
 case class AssessmentCourseInfo(id: Int, courseid: Int, assessmentid: Int, name: String, description: String, points: Int, group: String, autoGrade: Int, start: Option[String], end: Option[String], timeLimit: Option[Int])
-case class GradeFormulaInfo(id: Int, groupName: String, formula: String)
+case class GradeFormulaInfo(id: Int, courseid: Int, groupName: String, formula: String)
 case class CourseGradeInformation(assessments: Seq[AssessmentCourseInfo], formulas: Seq[GradeFormulaInfo])
 case class FullInstructorCourseData(students: Seq[FullStudentData], grades: CourseGradeInformation)
 

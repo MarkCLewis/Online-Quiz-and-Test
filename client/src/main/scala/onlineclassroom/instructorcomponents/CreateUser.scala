@@ -21,9 +21,9 @@ import onlineclassroom.ReadsAndWrites._
   def render: ReactElement = div (
     h3("Create User"),
     "Email: ", 
-    input(`type` := "text", id := "username", value := state.username, onChange := (e => setState(state.copy(username = e.target.value)))),
+    input(`type` := "text", value := state.username, onChange := (e => setState(state.copy(username = e.target.value)))),
     "Password:", 
-    input(`type` := "password", id := "password", value := state.password, onChange := (e => setState(state.copy(password = e.target.value)))),
+    input(`type` := "password", value := state.password, onChange := (e => setState(state.copy(password = e.target.value)))),
     if (props.userData.username == "root") select ( option (value := "false", "Student"), option (value := "true", "Instructor"), 
       onChange := (e => setState(state.copy(instructor = e.target.value == "true")))) else "",
     button("Create", onClick := (event => tryCreateUser())),

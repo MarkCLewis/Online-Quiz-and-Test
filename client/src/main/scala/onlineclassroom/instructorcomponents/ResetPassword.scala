@@ -21,9 +21,9 @@ import onlineclassroom.ReadsAndWrites._
   def render: ReactElement = div (
     h3("Reset User Password"),
     "Email: ", 
-    input(`type` := "text", id := "username", value := state.username, onChange := (e => setState(state.copy(username = e.target.value)))),
+    input(`type` := "text", value := state.username, onChange := (e => setState(state.copy(username = e.target.value)))),
     "Password:", 
-    input(`type` := "password", id := "password", value := state.password, onChange := (e => setState(state.copy(password = e.target.value)))),
+    input(`type` := "password", value := state.password, onChange := (e => setState(state.copy(password = e.target.value)))),
     button("Reset", onClick := (event => tryResetPassword())),
     state.message
   )

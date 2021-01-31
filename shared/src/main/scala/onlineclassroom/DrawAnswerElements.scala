@@ -14,17 +14,11 @@ case class Text(px: Double, py: Double, msg: String) extends DrawAnswerElement
 object DrawAnswerElement {
   def checkEquals(initialElements: Seq[DrawAnswerElement], correctElements: Seq[DrawAnswerElement], answerElements: Seq[DrawAnswerElement]): Boolean = {
     val correctMap = initialElements.zipWithIndex.map(t => -1-t._2 -> t._1).toMap ++ correctElements.zipWithIndex.map(t => t._2 -> t._1).toMap
-    println(correctMap)
     val answerMap = initialElements.zipWithIndex.map(t => -1-t._2 -> t._1).toMap ++ answerElements.zipWithIndex.map(t => t._2 -> t._1).toMap
-    println(answerMap)
     val correctEdges = correctElements.collect { case c: Connector => c }.groupBy(_.e1).map(t => t._1 -> t._2.sortBy(_.sub1))
-    println(correctEdges)
     val ansEdges = answerElements.collect { case c: Connector => c }.groupBy(_.e1).map(t => t._1 -> t._2.sortBy(_.sub1))
-    println(ansEdges)
     def recur(ce: Int, ae: Int, visited: Set[Int]): Boolean = {
-      println(s"recur $ce, $ae, $visited")
       val newVisited = visited + ce
-      println(correctMap(ce), answerMap(ae))
       (correctMap.contains(ce) && answerMap.contains(ae)) &&
       ((correctMap(ce), answerMap(ae)) match {
         case (crb: ReferenceBox, arb: ReferenceBox) => 

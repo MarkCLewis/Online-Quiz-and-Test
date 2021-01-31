@@ -117,7 +117,7 @@ def coursesForUser(userid: Int): Future[Seq[CourseData]] = {
     val formulas = db.run((for {
       f <- GradeFormula
       if f.courseid === courseid
-    } yield f).result).map(formulas => formulas.map(f => GradeFormulaInfo(f.id, f.gradeGroup, f.formula)))
+    } yield f).result).map(formulas => formulas.map(f => GradeFormulaInfo(f.id, f.courseid, f.gradeGroup, f.formula)))
     for(gfi <- formulas; aci <- assessments) yield CourseGradeInformation(aci, gfi)
   }
 
@@ -367,7 +367,7 @@ def coursesForUser(userid: Int): Future[Seq[CourseData]] = {
           db.run(AnswerGrade += AnswerGradeRow(-1, gd.userid, gd.courseid, gd.paaid, gd.percentCorrect, gd.comments)).
             flatMap(cnt => db.run(AnswerGrade.map(_.id).max.getOrElse(-1).result))
         } else {
-          db.run(AnswerGrade.filter(_.id === current.head.id).update(AnswerGradeRow(gd.id, gd.userid, gd.courseid, gd.paaid, gd.percentCorrect, gd.comments))).map(cnt => gd.id)        }
+          db.run(AnswerGrade.filter(_.id === current.head.id).update(AnswerGradeRow(current.head.id, gd.userid, gd.courseid, gd.paaid, gd.percentCorrect, gd.comments))).map(cnt => current.head.id) }
       }
     } else {
       db.run(AnswerGrade.filter(_.id === gd.id).update(AnswerGradeRow(gd.id, gd.userid, gd.courseid, gd.paaid, gd.percentCorrect, gd.comments))).map(cnt => gd.id)
@@ -386,7 +386,22 @@ def coursesForUser(userid: Int): Future[Seq[CourseData]] = {
     db.run((for {
       f <- GradeFormula
       if f.courseid === courseid
-    } yield f).result).map(formulas => formulas.map(f => GradeFormulaInfo(f.id, f.gradeGroup, f.formula)))
+    } yield f).result).map(formulas => formulas.map(f => GradeFormulaInfo(f.id, f.courseid, f.gradeGroup, f.formula)))
+  }
+
+  def updateFormula(gfi: GradeFormulaInfo): Future[Int] = {
+    if (gfi.id < 0) {
+      val fCurrent = db.run(GradeFormula.filter(gf => gf.courseid === gfi.courseid && gf.gradeGroup === gfi.groupName).result)
+      fCurrent.flatMap { current =>
+        if (current.isEmpty) {
+          db.run(GradeFormula += GradeFormulaRow(-1, gfi.courseid, gfi.groupName, gfi.formula)).
+            flatMap(cnt => db.run(GradeFormula.map(_.id).max.getOrElse(-1).result))
+        } else {
+          db.run(GradeFormula.filter(_.id === current.head.id).update(GradeFormulaRow(current.head.id, gfi.courseid, gfi.groupName, gfi.formula))).map(cnt => current.head.id)        }
+      }
+    } else {
+      db.run(GradeFormula.filter(_.id === gfi.id).update(GradeFormulaRow(gfi.id, gfi.courseid, gfi.groupName, gfi.formula))).map(cnt => gfi.id)
+    }
   }
 
   def getStudentAnswers(userid: Int, courseid: Int, paa: ProblemAssessmentAssocRow): Future[Seq[GradeAnswer]] = {

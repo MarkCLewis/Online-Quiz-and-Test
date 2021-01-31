@@ -66,6 +66,7 @@ object InstructorCourseViewModes extends Enumeration {
           val groupedAssessments = gd.assessments.groupBy(_.group)
           val groups = groupedAssessments.keys.toSeq.sortWith((g1, g2) => if (g1.isEmpty || g2.isEmpty) g1 > g2 else g1 < g2)
           val formulaMap = gd.formulas.map(f => f.groupName -> f.formula).toMap
+          val parsedFormulaMap = for ((g, f) <- formulaMap; parsed = FormulaParser(f); p <- parsed) yield g -> p
           val groupColumns = groupedAssessments.map { case (group, saci) => group -> (saci.map(_.name).sorted ++ (if (formulaMap.contains(group)) Seq("Total") else Nil))}
           val assessmentFilterRegex = try { state.assessmentFilter.r } catch { case ex: Exception => ".*".r }
           div (
@@ -76,12 +77,22 @@ object InstructorCourseViewModes extends Enumeration {
             table (
               thead (
                 tr ( th ("Email", rowSpan := 2), th ("Time Multiplier", rowSpan := 2), 
-                  groups.zipWithIndex.map { case (g, i) => th (key := i.toString, g, colSpan := groupColumns(g).length)}),
-                tr ( groups.zipWithIndex.map { case (g, i) => groupColumns(g).zipWithIndex.map { case (colHead, j) => 
-                  th (key := (i*100+j).toString, colHead, onClick := (e => setState(state.copy(mode = InstructorCourseViewModes.Grading, selectedAssessment = aciByName.get(colHead)))))}})
+                  groups.zipWithIndex.map { case (g, i) => th (key := i.toString, g, colSpan := groupColumns(g).length + 1)},
+                  th ("Total", rowSpan := 2)),
+                tr ( 
+                  groups.zipWithIndex.map { case (g, i) => 
+                    groupColumns(g).zipWithIndex.map { case (colHead, j) => 
+                      th (key := (i*100+j).toString, colHead, 
+                        onClick := (e => setState(state.copy(mode = InstructorCourseViewModes.Grading, selectedAssessment = aciByName.get(colHead))))
+                      )
+                    } :+ th (key := "agg", "Agg")
+                  }
+                )
               ),
               tbody (
                 state.studentData.sortBy(_.email.drop(1)).zipWithIndex.map { case (sd, i) =>
+                  val baseFormulaGrades = parsedFormulaMap.flatMap { case (g, f) => 
+                    f.eval(sd.grades.filter(t => groupColumns.get(g).map(_.contains(t._1)).getOrElse(false))).map(g -> _)}
                   tr (key := i.toString, 
                     td (sd.email), 
                     td (input (`type` := "number", value := sd.timeMultiplier.toString, 
@@ -91,11 +102,15 @@ object InstructorCourseViewModes extends Enumeration {
                       },
                       onBlur := (e => updateTimeMultiplier(sd.id, props.course.id, sd.timeMultiplier))
                     )), 
-                    groups.zipWithIndex.map { case (g, j) => groupColumns(g).zipWithIndex.map { case (colHead, k) => td (key := (j*100+k).toString, 
-                      if (sd.grades.contains(colHead)) sd.grades(colHead) else Formulas.calcFormula(sd.grades, formulaMap.get(g).getOrElse("")),
-                      onClick := (e => setState(state.copy(mode = InstructorCourseViewModes.ViewSingleAssessment, 
-                        selectedStudent = Some(UserData(sd.email, sd.id, false)), selectedACI = aciByName.get(colHead))))
-                    )}})
+                    groups.zipWithIndex.map { case (g, j) => 
+                      groupColumns(g).zipWithIndex.map { case (colHead, k) => td (key := (j*100+k).toString, 
+                        if (sd.grades.contains(colHead)) sd.grades(colHead) else Formulas.calcFormula(sd.grades, formulaMap.get(g).getOrElse("")),
+                        onClick := (e => setState(state.copy(mode = InstructorCourseViewModes.ViewSingleAssessment, 
+                          selectedStudent = Some(UserData(sd.email, sd.id, false)), selectedACI = aciByName.get(colHead))))
+                      )} :+ td (key := "agg", baseFormulaGrades.get(g))
+                    },
+                    td (parsedFormulaMap.get("Total").flatMap(f => f.eval(sd.grades ++ baseFormulaGrades)))
+                  )
                 }
               )
             ),
@@ -170,6 +185,32 @@ object InstructorCourseViewModes extends Enumeration {
                     ))
                   ) }: ReactElement
                 }.getOrElse(Seq(tr (): ReactElement))
+              ),
+            ),
+            h3 ("Formulas"),
+            ul (
+              groups.zipWithIndex.map { case (group, i) =>
+                li ( key := s"key-$i",
+                  group,
+                  input (`type` := "text", value := formulaMap.getOrElse(group, ""), size := "80",
+                    onChange := (e => setState(state.copy(gradeData = Some(gd.copy(formulas = {
+                      val formIndex = gd.formulas.indexWhere(_.groupName == group)
+                      if (formIndex < 0) GradeFormulaInfo(-1, props.course.id, group, e.target.value) +: gd.formulas
+                      else gd.formulas.patch(formIndex, Seq(gd.formulas(formIndex).copy(formula = e.target.value)), 1)
+                    }))))),
+                    onBlur := (e => formulaMap.get(group).foreach(f => updateFormula(group, f)))
+                  )
+                )
+              },
+              li ("Total",
+                input (`type` := "text", value := formulaMap.getOrElse("Total", ""), size := "80",
+                  onChange := (e => setState(state.copy(gradeData = Some(gd.copy(formulas = {
+                    val formIndex = gd.formulas.indexWhere(_.groupName == "Total")
+                    if (formIndex < 0) GradeFormulaInfo(-1, props.course.id, "Total", e.target.value) +: gd.formulas
+                    else gd.formulas.patch(formIndex, Seq(gd.formulas(formIndex).copy(formula = e.target.value)), 1)
+                  }))))),
+                  onBlur := (e => formulaMap.get("Total").foreach(f => updateFormula("Total", f)))
+                )
               )
             ),
             state.message,
@@ -231,5 +272,18 @@ object InstructorCourseViewModes extends Enumeration {
   def updateTimer1Second(): Unit = {
     state.serverTime.setMilliseconds(state.serverTime.getMilliseconds()+1000)
     setState(state.copy(serverTime = state.serverTime))
+  }
+
+  def updateFormula(group: String, formula: String): Unit = {
+    state.gradeData.foreach { gd =>
+      val id = gd.formulas.find(_.groupName == group).map(_.id).getOrElse(-1)
+      PostFetch.fetch("/updateFormula", GradeFormulaInfo(id, props.course.id, group, formula),
+        (fid: Int) => if (id == -1) setState(state.copy(gradeData = Some(gd.copy(formulas = {
+          val formIndex = gd.formulas.indexWhere(_.groupName == group)
+          if (formIndex < 0) GradeFormulaInfo(fid, props.course.id, group, formula) +: gd.formulas
+          else gd.formulas.patch(formIndex, Seq(gd.formulas(formIndex).copy(id = fid)), 1)
+        })))),
+        e => { println(e); setState(state.copy(message = "Error with JSON loading data."))})
+    }
   }
 }
