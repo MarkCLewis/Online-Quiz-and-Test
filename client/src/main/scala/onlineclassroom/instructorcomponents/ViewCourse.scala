@@ -67,7 +67,7 @@ object InstructorCourseViewModes extends Enumeration {
           val groups = groupedAssessments.keys.toSeq.sortWith((g1, g2) => if (g1.isEmpty || g2.isEmpty) g1 > g2 else g1 < g2)
           val formulaMap = gd.formulas.map(f => f.groupName -> f.formula).toMap
           val parsedFormulaMap = for ((g, f) <- formulaMap; parsed = FormulaParser(f); p <- parsed) yield g -> p
-          val groupColumns = groupedAssessments.map { case (group, saci) => group -> (saci.map(_.name).sorted ++ (if (formulaMap.contains(group)) Seq("Total") else Nil))}
+          val groupColumns = groupedAssessments.map { case (group, saci) => group -> (saci.map(_.name).sorted) }
           val assessmentFilterRegex = try { state.assessmentFilter.r } catch { case ex: Exception => ".*".r }
           div (
             h2 (s"${props.course.name}-${props.course.semester}-${props.course.section}", button ("Done", onClick := (e => props.exitFunc()))),

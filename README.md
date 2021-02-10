@@ -5,4 +5,8 @@ to grow from there.
 
 ## TODO list
 
+- Add grade displays to student course page.
 - Verify that manual entry grades are present.
+- Add Parson's problems.
+- Add fill in the blank problems. Use Regex for correct answers.
+

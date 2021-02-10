@@ -44,7 +44,7 @@ object CourseViewMode extends Enumeration {
     dom.window.clearInterval(longInterval)
   }
 
-  def render: ReactElement = {
+  def render(): ReactElement = {
     val startMap = state.starts.map(s => s.aciid -> s).toMap
     state.mode match {
       case CourseViewMode.Normal =>

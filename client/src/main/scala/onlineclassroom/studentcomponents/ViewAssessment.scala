@@ -22,7 +22,7 @@ import scala.scalajs.js.Date
   
   override def componentDidMount(): Unit = loadData()
   
-  def render: ReactElement = {
+  def render(): ReactElement = {
     div (
       button ("Done", onClick := (e => props.exitFunc())),
       state.gradingData.map(agd =>

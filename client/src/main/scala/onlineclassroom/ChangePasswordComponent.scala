@@ -17,7 +17,7 @@ import ReadsAndWrites._
 
   def initialState: State = State("", "", "")
 
-  def render: ReactElement = div (
+  def render(): ReactElement = div (
     h2 ("Change Password"),
     div (
       "Old Password: ", input(`type` := "password", id := "oldPassword", value := state.oldPassword, onChange := (e => setState(state.copy(oldPassword = e.target.value))))

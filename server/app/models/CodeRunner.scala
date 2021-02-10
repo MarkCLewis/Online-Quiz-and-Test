@@ -31,9 +31,9 @@ for(i <- 1 to $numRuns) {
     pw.println(nestedCode)
     pw.close
     val process = s"${ScalaSetup.scalaHome}scala -J-Djava.security.manager -J-Djava.security.policy=mypolicy ${tmpFile.getAbsolutePath()}".run() 
-    val ret = process.exitValue == 0
+    val ret = process.exitValue() == 0
     println("Done running - " + ret)
-    println("Exit value is " + process.exitValue)
+    println("Exit value is " + process.exitValue())
     ret
   }
 
@@ -41,7 +41,7 @@ for(i <- 1 to $numRuns) {
     val code = s"""
       ${gradeInfo.correctCode.replaceAll(info.functionName+"\\(", info.functionName + "Correct(")}
       $submission
-      ${info.varSpecs.map(_.codeGenerator).mkString("\n")}
+      ${info.varSpecs.map(_.codeGenerator()).mkString("\n")}
       val theirFunc = ${info.functionName}(${info.varSpecs.map(_.name).mkString(",")})
       val correctFunc = ${info.functionName}Correct(${info.varSpecs.map(_.name).mkString(",")})
       if(theirFunc != correctFunc) sys.exit(1)
@@ -54,7 +54,7 @@ for(i <- 1 to $numRuns) {
     val args = info.varSpecs.map(_.name).mkString(", ")
     val code = s"""
       def tester(f1:$funcType, f2:$funcType):Unit = {
-        ${info.varSpecs.map(_.codeGenerator).mkString("\n")}
+        ${info.varSpecs.map(_.codeGenerator()).mkString("\n")}
         if(f1($args) != f2($args)) sys.exit(1)
       }
       tester($submission,${gradeInfo.correctCode})
@@ -64,7 +64,7 @@ for(i <- 1 to $numRuns) {
 
   def checkExpression(info: WriteExpressionInfo, gradeInfo: WriteExpressionGradeInfo, submission: String): Boolean = {
     val code = s"""
-      ${info.varSpecs.map(_.codeGenerator).mkString("\n")}
+      ${info.varSpecs.map(_.codeGenerator()).mkString("\n")}
       ${info.generalSetup}
       if({$submission} != {${gradeInfo.correctCode}}) sys.exit(1)
       """

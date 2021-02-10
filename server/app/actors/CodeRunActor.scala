@@ -11,7 +11,7 @@ import models.OCModel
 class CodeRunActor extends Actor {
   def receive = {
     case Messages.RunTest(sai, testFunc, makeAnswer) =>
-      sender ! Messages.TestResult(testFunc(), sai, makeAnswer)
+      sender() ! Messages.TestResult(testFunc(), sai, makeAnswer)
     case m => println("Unhandled Message in CodeRunActor: " + m)
   }
 }
