@@ -30,7 +30,8 @@ for(i <- 1 to $numRuns) {
     println(nestedCode)
     pw.println(nestedCode)
     pw.close
-    val process = s"${ScalaSetup.scalaHome}scala -J-Djava.security.manager -J-Djava.security.policy=mypolicy ${tmpFile.getAbsolutePath()}".run() 
+    // val process = s"${ScalaSetup.scalaHome}scala -J-Djava.security.manager -J-Djava.security.policy=mypolicy ${tmpFile.getAbsolutePath()}".run() 
+    val process = s"./runScript.sh ${tmpFile.getAbsolutePath()}".run() 
     val ret = process.exitValue() == 0
     println("Done running - " + ret)
     println("Exit value is " + process.exitValue())
