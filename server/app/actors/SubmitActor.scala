@@ -59,9 +59,11 @@ class SubmitActor(out: ActorRef, model: OCModel, codeRunner: ActorRef) extends A
   }
 
   def testCode(sai: SaveAnswerInfo, runTest: ProblemSpec => Boolean, makeAnswer: Boolean => ProblemAnswer): Unit = {
+    println(s"Test code, $sai")
     model.oneProblemFromPAAID(sai.paaid).map {
       case Some(ps) =>
         out ! Json.toJson(CodeSubmitResponse("Testing code.", false))
+        println("Call the code runner.")
         codeRunner ! Messages.RunTest(sai, () => runTest(ps), makeAnswer)
       case None =>
         out ! Json.toJson(CodeSubmitResponse("Error reading problem for tesing.", false))

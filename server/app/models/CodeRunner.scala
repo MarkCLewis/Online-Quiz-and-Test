@@ -47,7 +47,7 @@ for(i <- 1 to $numRuns) {
       val correctFunc = ${info.functionName}Correct(${info.varSpecs.map(_.name).mkString(",")})
       if(theirFunc != correctFunc) sys.exit(1)
       """
-    CodeRunner.runCode(code, "", gradeInfo.numRuns)
+    runCode(code, "", gradeInfo.numRuns)
   }
 
   def checkLambda(info: WriteLambdaInfo, gradeInfo: WriteLambdaGradeInfo, submission: String): Boolean = {
@@ -60,16 +60,17 @@ for(i <- 1 to $numRuns) {
       }
       tester($submission,${gradeInfo.correctCode})
       """
-    CodeRunner.runCode(code, "", gradeInfo.numRuns)
+    runCode(code, "", gradeInfo.numRuns)
   }
 
   def checkExpression(info: WriteExpressionInfo, gradeInfo: WriteExpressionGradeInfo, submission: String): Boolean = {
+    println("Checking expression")
     val code = s"""
       ${info.varSpecs.map(_.codeGenerator()).mkString("\n")}
       ${info.generalSetup}
       if({$submission} != {${gradeInfo.correctCode}}) sys.exit(1)
       """
-    CodeRunner.runCode(code, "", gradeInfo.numRuns)
+    runCode(code, "", gradeInfo.numRuns)
   }
 }
 
