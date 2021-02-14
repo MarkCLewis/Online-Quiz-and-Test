@@ -42,7 +42,8 @@ import scala.scalajs.js.JSON
   def submitCode(code: String): Unit = {
     state.answer.foreach { ans =>
       if (ans.code.nonEmpty && ans.code.contains("def")) {
-        val sock = new WebSocket(s"ws://${dom.window.location.hostname}:${dom.window.location.port}/submitSocket")
+        val protocol = if (dom.window.location.protocol.startsWith("https")) "wss" else "ws"
+        val sock = new WebSocket(s"$protocol://${dom.window.location.hostname}:${dom.window.location.port}/submitSocket")
         sock.onmessage = msg => {
           Json.fromJson[CodeSubmitResponse](Json.parse(msg.data.toString)) match {
             case JsSuccess(csr, path) => 
