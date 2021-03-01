@@ -104,12 +104,12 @@ object InstructorCourseViewModes extends Enumeration {
                     )), 
                     groups.zipWithIndex.map { case (g, j) => 
                       groupColumns(g).zipWithIndex.map { case (colHead, k) => td (key := (j*100+k).toString, 
-                        if (sd.grades.contains(colHead)) sd.grades(colHead) else Formulas.calcFormula(sd.grades, formulaMap.get(g).getOrElse("")),
+                        (if (sd.grades.contains(colHead)) sd.grades(colHead) else Formulas.calcFormula(sd.grades, formulaMap.get(g).getOrElse(""))).formatted("%1.1f"),
                         onClick := (e => setState(state.copy(mode = InstructorCourseViewModes.ViewSingleAssessment, 
                           selectedStudent = Some(UserData(sd.email, sd.id, false)), selectedACI = aciByName.get(colHead))))
-                      )} :+ td (key := "agg", baseFormulaGrades.get(g))
+                      )} :+ td (key := "agg", baseFormulaGrades.get(g).map(_.formatted("%1.1f")))
                     },
-                    td (parsedFormulaMap.get("Total").flatMap(f => f.eval(sd.grades ++ baseFormulaGrades)))
+                    td (parsedFormulaMap.get("Total").flatMap(f => f.eval(sd.grades ++ baseFormulaGrades).map(_.formatted("%1.1f"))))
                   )
                 }
               )
